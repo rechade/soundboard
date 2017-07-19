@@ -64,7 +64,6 @@
 
 	testInstance === Synth; // true
 	Synth.play(1, 'C', 4, 1);
-
 	// end keithwhor stuff
 	
 
