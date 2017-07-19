@@ -189,7 +189,7 @@ var Synth, AudioSynth, AudioSynthInstrument;
 	setPub('listSounds', function() {
 		var r = [];
 		for(var i=0;i<this._sounds.length;i++) {
-			r.push(this. [i].name);
+			r.push(this._sounds[i].name);
 		}
 		return r;
 	});
