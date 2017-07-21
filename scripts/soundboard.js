@@ -54,16 +54,20 @@
   $(document).on('ready', function(){
     var $boards = $('#boards');
 
-    var urls = $.map(URLS, function(d){return d.url; });
-// keithwhor stuff
+    
+
+	
+	// keithwhor stuff
 	Synth instanceof AudioSynth; // true
 
 	var testInstance = new AudioSynth;
 	testInstance instanceof AudioSynth; // true
 
 	testInstance === Synth; // true
-	Synth.play(1, 'C', 4, 1);
+	Synth.play(2, 'C', 4, 1);
 	// end keithwhor stuff
+	
+	
     // Go get all the URLS from embedly.
     $.embedly.oembed(urls)
       .done(function(results){

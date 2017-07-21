@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MC Ricky G KB</title>
+  <meta name="description" content="MC Ricky G KB">
+  <meta name="MC Ricky G" content="KB">
+  <link rel="stylesheet" href="css/styles.css?v=1.0">
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+</head>
+
+<body>
+<canvas id="myCanvas" width="1200" height="900" style="border:1px solid #d3d3d3;"onclick="handleClick(event)">
+Your browser does not support the HTML5 canvas tag.</canvas>
+  <script src="js/scripts.js"></script>
+  <script src="scripts/audiosynth.js"></script>
+  <script src="scripts/pads.js"></script>  
+  <script src="scripts/scales.js"></script>
+  <script>
+  Synth instanceof AudioSynth; // true
+		var testInstance = new AudioSynth;
+		testInstance instanceof AudioSynth; // true
+		testInstance === Synth; // true
+	var canvas=document.getElementById("myCanvas");
+	var ctx=canvas.getContext("2d");
+	scales.changeScale(ScaleType.MIN);
+	
+	//pads.myFillRect(ctx, pads.hitPaint, 20,20,70,140);
+	pads.padWidth = canvas.width / pads.NUM_COLS;
+	pads.padHeight = canvas.height / pads.NUM_ROWS;
+	scales.allocatePadNotes();
+	pads.allocatePadPaints();
+	pads.drawPads(ctx);
+
+	function handleClick(event){
+		var x = event.clientX;
+		var y = event.clientY;
+		// alert (x+","+y);       
+		var colNum = Math.floor(x / pads.padWidth); 
+		var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;		
+		var padNum = colNum + (rowNum * pads.NUM_COLS);
+		playNote(padNum);		
+	}
+
+	function playNote(padNum){		
+
+		// keithwhor stuff
+		
+		Synth.play(0, 'C', 4, 1);
+		// end keithwhor stuff
+	}
+  </script>
+</body>
+</html>
