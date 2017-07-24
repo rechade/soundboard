@@ -1,4 +1,4 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -11,46 +11,75 @@
   <![endif]-->
 </head>
 
-<body>
-<canvas id="myCanvas" width="1200" height="900" style="border:1px solid #d3d3d3;"onclick="handleClick(event)">
+<body>	
+<canvas id="myCanvas" width="600" height="450" style="border:1px solid #d3d3d3;"onclick="handleClick(event)">
 Your browser does not support the HTML5 canvas tag.</canvas>
+<textarea id="mytextarea">Text to be changed</textarea>
   <script src="js/scripts.js"></script>
   <script src="scripts/audiosynth.js"></script>
   <script src="scripts/pads.js"></script>  
   <script src="scripts/scales.js"></script>
   <script>
-  Synth instanceof AudioSynth; // true
-		var testInstance = new AudioSynth;
-		testInstance instanceof AudioSynth; // true
-		testInstance === Synth; // true
+  	Synth instanceof AudioSynth; // true
+	var testInstance = new AudioSynth;
+	testInstance instanceof AudioSynth; // true
+	testInstance === Synth; // true
 	var canvas=document.getElementById("myCanvas");
 	var ctx=canvas.getContext("2d");
-	scales.changeScale(ScaleType.MIN);
-	
-	//pads.myFillRect(ctx, pads.hitPaint, 20,20,70,140);
-	pads.padWidth = canvas.width / pads.NUM_COLS;
-	pads.padHeight = canvas.height / pads.NUM_ROWS;
+
+	scales.changeScale(ScaleType.MAJ);
+	//alert ("scaleArray: " +scales.scaleArray);
+	scales.changeRootNote(RootNote.E);
+	//alert ("rootNote: " +scales.rootNote);
 	scales.allocatePadNotes();
-	pads.allocatePadPaints();
+	alert ("padNotes: " + scales.notes);	
+	
+	pads.padWidth = Math.floor(canvas.width / pads.NUM_COLS);
+	pads.padHeight = Math.floor(canvas.height / pads.NUM_ROWS);
+	//pads.allocatePadPaints();
+	alert ("padPaints: " + pads.padPaints);
 	pads.drawPads(ctx);
 
 	function handleClick(event){
 		var x = event.clientX;
 		var y = event.clientY;
-		// alert (x+","+y);       
-		var colNum = Math.floor(x / pads.padWidth); 
-		var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;		
+		//alert (x+","+y);
+		var colNum = Math.floor(x / pads.padWidth);
+		var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
 		var padNum = colNum + (rowNum * pads.NUM_COLS);
-		playNote(padNum);		
-	}
+		//alert(padNum);
+		document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];
+		//alert(scales.notes[padNum]);
+	};
 
-	function playNote(padNum){		
-
+	function playNote(padNum){
+		// TODO get MIDI from padNum and change to audiosynth format
+		// or modify audiosynth.
 		// keithwhor stuff
-		
-		Synth.play(0, 'C', 4, 1);
+		var padNote = (scales.notes[padNum])%12;
+		var octave = Math.floor(scales.notes[padNum]/12);		
+		var synthNote = 'C';
+		alert(padNote);
+		switch (padNote){
+			case 0: synthNote = 'C'; break;
+			case 1: synthNote = 'C#'; break;
+			case 2: synthNote = 'D'; break;
+			case 3: synthNote = 'D#'; break;
+			case 4: synthNote = 'E'; break;
+			case 5: synthNote = 'F'; break;
+			case 6: synthNote = 'F#'; break;
+			case 7: synthNote = 'G'; break;
+			case 8: synthNote = 'G#'; break;
+			case 9: synthNote = 'A'; break;
+			case 10: synthNote = 'A#'; break;
+			case 11: synthNote = 'B'; break;
+		};
+
+		Synth.play(0, 'C#', octave, 1);
+		Synth.play(0, 'C', octave, 1);
+		Synth.play(0, 'D', octave, 1);
 		// end keithwhor stuff
-	}
+	};
   </script>
 </body>
 </html>

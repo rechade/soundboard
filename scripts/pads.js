@@ -27,18 +27,23 @@ var pads = {
         var x = 0;
         var y = 0;
         var i=0;
-        for (var row=7; row>=0; row--) {
-            x=0;
-            for (var col=0; col<pads.NUM_COLS; col++){
+        var row=0;
+        var col=0;
+        var canvasHeight=pads.padHeight * pads.NUM_ROWS;
+        y = canvasHeight - pads.padHeight;                  
+        for (row=0; row<pads.NUM_ROWS; row++) {      
+            
+            for (col=0; col<pads.NUM_COLS; col++){
                 //var rect = [x,y,pads.padWidth,pads.padHeight];
                 //padRects.push(rect);
+                x=col*pads.padWidth;                
                 pads.drawPad(ctx,pads.padPaints[i],x,y,pads.padWidth, pads.padHeight);
                 // next column                
-                x+= pads.padWidth;                
+                //x+= pads.padWidth;                
                 i++;
             }
             // next row
-            y+=pads.padHeight;            
+            y-=pads.padHeight;            
         }                
     },
 

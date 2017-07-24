@@ -2,8 +2,14 @@ var ScaleType = {
 	  MAJ: 1,
 	  MIN: 2,
 	  DOR: 3,
-	  FOUR_THREE: 4,
-	  THREE_FOUR: 5,
+	  FOURTHS: 4,
+	  THIRDS: 5,
+};
+
+var LayoutType = {
+	UP_IN_FOURTHS: 1,
+	UP_IN_THIRDS: 2,
+	SEQUENTIAL: 3,
 };
 
 var RootNote = {
@@ -20,98 +26,144 @@ var RootNote = {
 	A_SHARP: 10,
 	B: 11,	
 };
-  
+
 var scales = {
 	rootNote : RootNote.C,  
 	scaleType : ScaleType.MAJ,
-	upInFourths : false,
+	layoutType : LayoutType.UP_IN_FOURTHS,
 	inKey : true,
 	scaleArray : [],
 	notes : [],
 	
 	allocatePadNotes : function() {
+		
 		var i=0;
         var notesIndex=0;
-        var lastRowStartedAt=0;
-        var note;		
-        if ((scales.scaleType!==ScaleType.FOUR_THREE)&&(scales.scaleType!==ScaleType.THREE_FOUR)){
-            note=scales.rootNote;
-        }else{
-            note=scales.rootNote-8;
-        }
-
-        var savedNote=note;
+		var note;	
+		var notePushed;
+		
+        //if ((scales.scaleType!==ScaleType.FOURTHS)&&(scales.scaleType!==ScaleType.THIRDS)){
+        //    note=scales.rootNote;
+        //}else{
+        //   note=scales.rootNote-8;
+        //}
+		
+		note=scales.rootNote;	
+		// start on root note, scaleIndex is 0, nothing pushed, note 0/64
         while (notesIndex < pads.NUM_PADS) {
+			notePushed=false;
             i = i%12;
-            // only add a note and increment if the scale and layout specify it
+            // only add a note if the scale and layout specify it
             if (scales.scaleArray[i]) {
 				scales.notes.push(note);
-				notesIndex++;
+				notePushed = true;
+				if(i==0){
+					// it's the root note, add appropriate paint
+					pads.padPaints.push(pads.rootPaint);
+					//alert("rootPaint");
+				} else {
+					// it's in the scale, add white paint
+					pads.padPaints.push(pads.whitePaint);
+					//alert("whitePaint");
+				}
             } else if (!scales.inKey) {
+				// it's not in the scale, but we're showing black notes, add black paint
 				scales.notes.push(note);
-				notesIndex++;
-            }
-            // always cycle to the next semitone in scaleArray and increment the midi note
-            switch(scales.scaleType){
-                case ScaleType.FOUR_THREE:
-                    note+=4;
-                    i++;
-                    break;
-                case ScaleType.THREE_FOUR:
-                    note+=3;
-                    i++;
-                    break;
-                default:
-                    note++;
-                    i++;
-                    break;
-            }
-            // have we passed the end of a row
-			//i = lastRowStartedAt + semitonesToNextRow(lastRowStartedAt);
-			//note = savedNote + semitonesToNextRow(lastRowStartedAt);
-			i = i%12;
-			// if we're in key and the jump to the next row would land on a non key note,
-			// skip to next key note
-			while (scales.inKey & !scales.scaleArray[i]) {
-				i++;
-				note++;
-				i = i%12;
+				notePushed = true;
+				pads.padPaints.push(pads.blackPaint);
+			}			
+
+			// RECORD CURRENT NOTE AND SCALEINDEX FOR USE AT START OF NEXT ROW
+			// - AT APPROPRIATE POSITION OF CURRENT ROW ACCORDING TO LAYOUT ETC
+
+			// UP_IN_FOURTHS layout
+			if (scales.layoutType==LayoutType.UP_IN_FOURTHS){	
+				if (scales.inKey){					
+					// inKey, use note from 4th pad
+					if (notesIndex%pads.NUM_COLS==3){		
+						if (notePushed){
+						nextRowStartScaleIndex = i;
+						nextRowStartScaleNote = note;
+						}
+					}
+				} else {
+					// 6th pad-note of previous row
+					if (notesIndex%pads.NUM_COLS==5){								
+						nextRowStartScaleIndex = i;
+						nextRowStartScaleNote = note;
+					}
+				}
 			}
-			// save square 1 info for next jump
-			lastRowStartedAt = i;
-			savedNote = note;
-        }     
+
+			// UP_IN_THIRDS layout
+			if (scales.layoutType==LayoutType.UP_IN_THIRDS){						
+				if (scales.inKey){
+					// inKey, use note from 3rd pad
+					if (notesIndex%pads.NUM_COLS==2){								
+						nextRowStartScaleIndex = i;
+						nextRowStartScaleNote = note;
+					}
+				} else {
+					// 5th pad-note of previous row
+					if (notesIndex%pads.NUM_COLS==4){								
+						nextRowStartScaleIndex = i;
+						nextRowStartScaleNote = note;
+					}
+				}
+			}
+
+			// SEQUENTIAL layout
+			if (scales.layoutType==LayoutType.SEQUENTIAL){						
+				if (scales.inKey){
+					// inKey, use note from 1st pad plus an octave
+					if (notesIndex%pads.NUM_COLS==0){								
+						nextRowStartScaleIndex = i;
+						nextRowStartScaleNote = note+12;
+					}
+				} else {
+					// next in sequence
+					if (notesIndex%pads.NUM_COLS==5){								
+						nextRowStartScaleIndex = (i+1)%12;
+						nextRowStartScaleNote = note+1;
+					}
+				}
+			}
+				
+			// TODO: migamo mode ()						
+			
+			// are we at the end of a row?			
+			if ((notesIndex%pads.NUM_COLS)==(pads.NUM_COLS-1)){
+				// you just filled last pad (usually 7) of the row				
+				// use the nextRowStartScaleNote and nextRowStartScaleIndex	to 
+				// set values for start of next row
+				i = nextRowStartScaleIndex;
+				note = nextRowStartScaleNote;				
+			} else {
+				// cycle to the next semitone in scaleArray and increment the midi note
+				switch(scales.scaleType){
+					case ScaleType.FOURTHS:
+						note+=4;
+						i++;
+						break;
+					case ScaleType.THIRDS:
+						note+=3;
+						i++;
+						break;
+					default:
+						note++;
+						i++;
+						break;
+				}
+			}	
+			// now all the processing and necessary stuff has been recorded / used, 
+			// we can update notesIndex if the generated note was part of the layout
+			if (notePushed){
+				notesIndex++;
+			}	
+		}
 	}, 
-	semitonesToNextRow : function(startPoint) {
-        var sentinel = 0;
-        var toneCounter = 0;
-        if (scales.upInFourths) {
-            sentinel = 3;
-        } else {
-            sentinel = 2;
-        }
-        var i=startPoint+1;
-        i=i%12;
-        var semitoneCounter = 0;
-        while (toneCounter<sentinel){
-            if (scales.scaleArray[i]) {
-                toneCounter++;
-            }
-            semitoneCounter++;
-            i++;
-            i=i%12;
-        }
-        if (scales.inKey){
-            return semitoneCounter;
-        } else {
-            if (scales.upInFourths) {
-                return 4;
-            } else {
-                return 3;
-            }
-        }
-    },
-	changeRoot : function(newRootNote) {
+	
+	changeRootNote : function(newRootNote) {
 		// TODO input checking
 		scales.rootNote = newRootNote;
 	},
