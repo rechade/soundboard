@@ -31,8 +31,7 @@ var pads = {
         var col=0;
         var canvasHeight=pads.padHeight * pads.NUM_ROWS;
         y = canvasHeight - pads.padHeight;                  
-        for (row=0; row<pads.NUM_ROWS; row++) {      
-            
+        for (row=0; row<pads.NUM_ROWS; row++) {                  
             for (col=0; col<pads.NUM_COLS; col++){
                 //var rect = [x,y,pads.padWidth,pads.padHeight];
                 //padRects.push(rect);

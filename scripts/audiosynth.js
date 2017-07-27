@@ -1,6 +1,7 @@
 var Synth, AudioSynth, AudioSynthInstrument;
 !function(){
 
+	
 	var URL = window.URL || window.webkitURL;
 	var Blob = window.Blob;
 
@@ -42,6 +43,8 @@ var Synth, AudioSynth, AudioSynthInstrument;
 	});
 	setPub('getSampleRate', function() { return this._sampleRate; });
 	setPriv('_volume',32768,true);
+	//asdf
+	setPriv('midiNote',4,true);
 	setPub('setVolume', function(v) {
 		v = parseFloat(v); if(isNaN(v)) { v = 0; }
 		v = Math.round(v*32768);
@@ -96,7 +99,12 @@ var Synth, AudioSynth, AudioSynthInstrument;
 			if(this._debug) { console.log((new Date).valueOf() - t, 'ms to retrieve (cached)'); }
 			return this._fileCache[sound][octave-1][note][time];
 		} else {
-			var frequency = this._notes[note] * Math.pow(2,octave-4);
+			// asdf
+			
+			var pow = (this.midiNote - 69) / 12.0;			
+			var frequency = 440 * Math.pow(2, pow);
+			//alert ("Note: "+this.midiNote + " freq:"+frequency);
+			//var frequency = this._notes[note] * Math.pow(2,octave-4);
 			var sampleRate = this._sampleRate;
 			var volume = this._volume;
 			var channels = this._channels;
@@ -155,8 +163,11 @@ var Synth, AudioSynth, AudioSynthInstrument;
 			return dataURI;
 		}
 	});
-	setPub('play', function(sound, note, octave, duration) {
-		var src = this.generate(sound, note, octave, duration);
+	setPub('play', function(sound, note, octave, duration,mNote) {
+		//asdf				
+		this.midiNote = mNote;
+		//alert("midiNote: "+this.midiNote);
+		var src = this.generate(sound, note, octave, duration);		
 		var audio = new Audio(src);
 		audio.play();
 		return true;

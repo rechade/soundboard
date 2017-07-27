@@ -32,12 +32,12 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 	scales.changeRootNote(RootNote.E);
 	//alert ("rootNote: " +scales.rootNote);
 	scales.allocatePadNotes();
-	alert ("padNotes: " + scales.notes);	
+	//alert ("padNotes: " + scales.notes);	
 	
 	pads.padWidth = Math.floor(canvas.width / pads.NUM_COLS);
 	pads.padHeight = Math.floor(canvas.height / pads.NUM_ROWS);
 	//pads.allocatePadPaints();
-	alert ("padPaints: " + pads.padPaints);
+	//alert ("padPaints: " + pads.padPaints);
 	pads.drawPads(ctx);
 
 	function handleClick(event){
@@ -48,8 +48,8 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 		var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
 		var padNum = colNum + (rowNum * pads.NUM_COLS);
 		//alert(padNum);
-		document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];
-		//alert(scales.notes[padNum]);
+		document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
+		playNote(padNum);
 	};
 
 	function playNote(padNum){
@@ -57,9 +57,10 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 		// or modify audiosynth.
 		// keithwhor stuff
 		var padNote = (scales.notes[padNum])%12;
-		var octave = Math.floor(scales.notes[padNum]/12);		
+		var octave = Math.floor(scales.notes[padNum]/12);
 		var synthNote = 'C';
-		alert(padNote);
+		var MIDINote = scales.notes[padNum];
+				
 		switch (padNote){
 			case 0: synthNote = 'C'; break;
 			case 1: synthNote = 'C#'; break;
@@ -74,10 +75,11 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 			case 10: synthNote = 'A#'; break;
 			case 11: synthNote = 'B'; break;
 		};
-
-		Synth.play(0, 'C#', octave, 1);
-		Synth.play(0, 'C', octave, 1);
-		Synth.play(0, 'D', octave, 1);
+		//alert(MIDINote);
+		Synth.play(0, synthNote, octave, 1,MIDINote);
+		//Synth.play(0, 'C#', octave, 1);
+		//Synth.play(0, 'C', octave, 1);
+		//Synth.play(0, 'D', octave, 1);
 		// end keithwhor stuff
 	};
   </script>

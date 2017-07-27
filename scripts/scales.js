@@ -30,17 +30,17 @@ var RootNote = {
 var scales = {
 	rootNote : RootNote.C,  
 	scaleType : ScaleType.MAJ,
-	layoutType : LayoutType.UP_IN_FOURTHS,
+	layoutType : LayoutType.UP_IN_THIRDS,
 	inKey : true,
 	scaleArray : [],
 	notes : [],
-	
+	notePushed : false,
+	endOfRow : false,
 	allocatePadNotes : function() {
 		
 		var i=0;
         var notesIndex=0;
 		var note;	
-		var notePushed;
 		
         //if ((scales.scaleType!==ScaleType.FOURTHS)&&(scales.scaleType!==ScaleType.THIRDS)){
         //    note=scales.rootNote;
@@ -51,12 +51,18 @@ var scales = {
 		note=scales.rootNote;	
 		// start on root note, scaleIndex is 0, nothing pushed, note 0/64
         while (notesIndex < pads.NUM_PADS) {
-			notePushed=false;
+			//alert(notesIndex);
+			if (scales.endOfRow){
+				scales.notePushed=true;			
+			} else {
+				scales.notePushed=false;			
+			}
             i = i%12;
             // only add a note if the scale and layout specify it
             if (scales.scaleArray[i]) {
 				scales.notes.push(note);
-				notePushed = true;
+				scales.notePushed = true;
+				//alert(scales.notePushed);
 				if(i==0){
 					// it's the root note, add appropriate paint
 					pads.padPaints.push(pads.rootPaint);
@@ -66,79 +72,86 @@ var scales = {
 					pads.padPaints.push(pads.whitePaint);
 					//alert("whitePaint");
 				}
-            } else if (!scales.inKey) {
+			} else if (!scales.inKey) {
 				// it's not in the scale, but we're showing black notes, add black paint
 				scales.notes.push(note);
-				notePushed = true;
+				scales.notePushed = true;
 				pads.padPaints.push(pads.blackPaint);
-			}			
+			};
+			
 
 			// RECORD CURRENT NOTE AND SCALEINDEX FOR USE AT START OF NEXT ROW
 			// - AT APPROPRIATE POSITION OF CURRENT ROW ACCORDING TO LAYOUT ETC
-
-			// UP_IN_FOURTHS layout
-			if (scales.layoutType==LayoutType.UP_IN_FOURTHS){	
-				if (scales.inKey){					
-					// inKey, use note from 4th pad
-					if (notesIndex%pads.NUM_COLS==3){		
-						if (notePushed){
-						nextRowStartScaleIndex = i;
-						nextRowStartScaleNote = note;
+			if (scales.notePushed){
+				//alert("Note Pushed - note:"+note+" i:"+ i+ " notesIndex:"+notesIndex);
+				// UP_IN_FOURTHS layout
+				if (scales.layoutType==LayoutType.UP_IN_FOURTHS){	
+					if (scales.inKey){					
+						// inKey, use note from 4th pad
+						if (notesIndex%pads.NUM_COLS==3){	
+							nextRowStartScaleIndex = i;
+							nextRowStartScaleNote = note;
+						}
+					} else {
+						// 6th pad-note of previous row
+						if (notesIndex%pads.NUM_COLS==5){								
+							nextRowStartScaleIndex = i;
+							nextRowStartScaleNote = note;
 						}
 					}
-				} else {
-					// 6th pad-note of previous row
-					if (notesIndex%pads.NUM_COLS==5){								
-						nextRowStartScaleIndex = i;
-						nextRowStartScaleNote = note;
-					}
 				}
-			}
 
-			// UP_IN_THIRDS layout
-			if (scales.layoutType==LayoutType.UP_IN_THIRDS){						
-				if (scales.inKey){
-					// inKey, use note from 3rd pad
-					if (notesIndex%pads.NUM_COLS==2){								
-						nextRowStartScaleIndex = i;
-						nextRowStartScaleNote = note;
-					}
-				} else {
-					// 5th pad-note of previous row
-					if (notesIndex%pads.NUM_COLS==4){								
-						nextRowStartScaleIndex = i;
-						nextRowStartScaleNote = note;
+				// UP_IN_THIRDS layout
+				if (scales.layoutType==LayoutType.UP_IN_THIRDS){						
+					if (scales.inKey){
+						// inKey, use note from 3rd pad
+						if (notesIndex%pads.NUM_COLS==2){								
+							nextRowStartScaleIndex = i;
+							nextRowStartScaleNote = note;
+						}
+					} else {
+						// 5th pad-note of previous row
+						if (notesIndex%pads.NUM_COLS==4){								
+							nextRowStartScaleIndex = i;
+							nextRowStartScaleNote = note;
+						}
 					}
 				}
-			}
 
-			// SEQUENTIAL layout
-			if (scales.layoutType==LayoutType.SEQUENTIAL){						
-				if (scales.inKey){
-					// inKey, use note from 1st pad plus an octave
-					if (notesIndex%pads.NUM_COLS==0){								
-						nextRowStartScaleIndex = i;
-						nextRowStartScaleNote = note+12;
-					}
-				} else {
-					// next in sequence
-					if (notesIndex%pads.NUM_COLS==5){								
-						nextRowStartScaleIndex = (i+1)%12;
-						nextRowStartScaleNote = note+1;
+				// SEQUENTIAL layout
+				if (scales.layoutType==LayoutType.SEQUENTIAL){						
+					if (scales.inKey){
+						// inKey, use note from 1st pad plus an octave
+						if (notesIndex%pads.NUM_COLS==0){								
+							nextRowStartScaleIndex = i;
+							nextRowStartScaleNote = note+12;
+						}
+					} else {
+						// next in sequence
+						if (notesIndex%pads.NUM_COLS==5){								
+							nextRowStartScaleIndex = (i+1)%12;
+							nextRowStartScaleNote = note+1;
+						}
 					}
 				}
-			}
+					
+				// TODO: migamo mode ()						
 				
-			// TODO: migamo mode ()						
+				// are we at the end of a row?		
+				if ((notesIndex%pads.NUM_COLS)==(pads.NUM_COLS-1)){
+					//alert(notesIndex);
+					// you just filled last pad (usually 7) of the row				
+					// use the nextRowStartScaleNote and nextRowStartScaleIndex	to 
+					// set values for start of next row
+					i = nextRowStartScaleIndex;
+					note = nextRowStartScaleNote;
+					scales.endOfRow	= true;
+				}	else {
+					scales.endOfRow	= false;
+				}
+			} // endif notePushed			
 			
-			// are we at the end of a row?			
-			if ((notesIndex%pads.NUM_COLS)==(pads.NUM_COLS-1)){
-				// you just filled last pad (usually 7) of the row				
-				// use the nextRowStartScaleNote and nextRowStartScaleIndex	to 
-				// set values for start of next row
-				i = nextRowStartScaleIndex;
-				note = nextRowStartScaleNote;				
-			} else {
+			if (!scales.endOfRow){
 				// cycle to the next semitone in scaleArray and increment the midi note
 				switch(scales.scaleType){
 					case ScaleType.FOURTHS:
@@ -149,17 +162,19 @@ var scales = {
 						note+=3;
 						i++;
 						break;
-					default:
+					default:						
 						note++;
 						i++;
 						break;
 				}
-			}	
+			}
+
 			// now all the processing and necessary stuff has been recorded / used, 
 			// we can update notesIndex if the generated note was part of the layout
-			if (notePushed){
+			if (scales.notePushed){				
 				notesIndex++;
-			}	
+				//alert (notesIndex);
+			}
 		}
 	}, 
 	
