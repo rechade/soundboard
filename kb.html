@@ -12,7 +12,7 @@
 </head>
 
 <body>	
-<canvas id="myCanvas" width="600" height="450" style="border:1px solid #d3d3d3;"onclick="handleClick(event)">
+<canvas id="myCanvas" width="600" height="450" style="border:1px solid #d3d3d3;" onmousedown="handleMouseDown(event)" onmouseup="handleMouseUp(event)" onmousemove="handleMove(event)">
 Your browser does not support the HTML5 canvas tag.</canvas>
 <textarea id="mytextarea">Text to be changed</textarea>
   <script src="js/scripts.js"></script>
@@ -26,10 +26,11 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 	testInstance === Synth; // true
 	var canvas=document.getElementById("myCanvas");
 	var ctx=canvas.getContext("2d");
+	var mouseDown=false;
 
 	scales.changeScale(ScaleType.MAJ);
 	//alert ("scaleArray: " +scales.scaleArray);
-	scales.changeRootNote(RootNote.E);
+	scales.changeRootNote(RootNote.E+36);
 	//alert ("rootNote: " +scales.rootNote);
 	scales.allocatePadNotes();
 	//alert ("padNotes: " + scales.notes);	
@@ -40,9 +41,10 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 	//alert ("padPaints: " + pads.padPaints);
 	pads.drawPads(ctx);
 
-	function handleClick(event){
+	function handleMouseDown(event){
 		var x = event.clientX;
 		var y = event.clientY;
+		mouseDown=true;
 		//alert (x+","+y);
 		var colNum = Math.floor(x / pads.padWidth);
 		var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
@@ -50,6 +52,28 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 		//alert(padNum);
 		document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
 		playNote(padNum);
+		lastPad = padNum;
+	};
+
+	function handleMouseUp(event){
+		mouseDown = false;
+	}
+
+	function handleMove(event){
+		if (mouseDown){
+			var x = event.clientX;
+			var y = event.clientY;
+			//alert (x+","+y);
+			var colNum = Math.floor(x / pads.padWidth);
+			var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
+			var padNum = colNum + (rowNum * pads.NUM_COLS);
+			//alert(padNum);
+			document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
+			if (lastPad != padNum){
+				playNote(padNum);
+				lastPad = padNum;
+			}
+		}
 	};
 
 	function playNote(padNum){
@@ -75,6 +99,7 @@ Your browser does not support the HTML5 canvas tag.</canvas>
 			case 10: synthNote = 'A#'; break;
 			case 11: synthNote = 'B'; break;
 		};
+
 		//alert(MIDINote);
 		Synth.play(0, synthNote, octave, 1,MIDINote);
 		//Synth.play(0, 'C#', octave, 1);
