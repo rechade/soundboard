@@ -1,7 +1,8 @@
- <!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>MC Ricky G KB</title>
   <meta name="description" content="MC Ricky G KB">
   <meta name="MC Ricky G" content="KB">
@@ -10,103 +11,83 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
   <![endif]-->
 </head>
-
 <body>	
-<canvas id="myCanvas" width="600" height="450" style="border:1px solid #d3d3d3;" onmousedown="handleMouseDown(event)" onmouseup="handleMouseUp(event)" onmousemove="handleMove(event)">
-Your browser does not support the HTML5 canvas tag.</canvas>
-<textarea id="mytextarea">Text to be changed</textarea>
-  <script src="js/scripts.js"></script>
-  <script src="scripts/audiosynth.js"></script>
-  <script src="scripts/pads.js"></script>  
-  <script src="scripts/scales.js"></script>
-  <script>
-  	Synth instanceof AudioSynth; // true
-	var testInstance = new AudioSynth;
-	testInstance instanceof AudioSynth; // true
-	testInstance === Synth; // true
-	var canvas=document.getElementById("myCanvas");
-	var ctx=canvas.getContext("2d");
-	var mouseDown=false;
+	<canvas id="myCanvas" width="1200" height="720" style="border:1px solid #d3d3d3;" onmousedown="handleMouseDown(event.clientX,event.clientY)">
+		Your browser does not support the HTML5 canvas tag.
+	</canvas>
 
-	scales.changeScale(ScaleType.MAJ);
-	//alert ("scaleArray: " +scales.scaleArray);
-	scales.changeRootNote(RootNote.E+36);
-	//alert ("rootNote: " +scales.rootNote);
-	scales.allocatePadNotes();
-	//alert ("padNotes: " + scales.notes);	
-	
-	pads.padWidth = Math.floor(canvas.width / pads.NUM_COLS);
-	pads.padHeight = Math.floor(canvas.height / pads.NUM_ROWS);
-	//pads.allocatePadPaints();
-	//alert ("padPaints: " + pads.padPaints);
-	pads.drawPads(ctx);
+	<textarea id="mytextarea">Text to be changed</textarea> 
+	<script src="scripts/pads.js"></script>  
+	<script src="scripts/scales.js"></script>
+	<script>
+		var canvas=document.getElementById("myCanvas");
+		var ctx=canvas.getContext("2d");		
+		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+		// prevent scrolling
+		document.body.addEventListener('touchmove', function(event) {
+			event.preventDefault();
+		}, false); 
 
-	function handleMouseDown(event){
-		var x = event.clientX;
-		var y = event.clientY;
-		mouseDown=true;
-		//alert (x+","+y);
-		var colNum = Math.floor(x / pads.padWidth);
-		var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
-		var padNum = colNum + (rowNum * pads.NUM_COLS);
-		//alert(padNum);
-		document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-		playNote(padNum);
-		lastPad = padNum;
-	};
+		// handle initial touches
+		canvas.addEventListener('touchstart', function(event) {
+			for (var i = 0; i < event.touches.length; i++) {
+				var touch = event.touches[i];
+				event.preventDefault();
+				handleTouchStart(touch.pageX,touch.pageY);			
+			}
+		}, false);
 
-	function handleMouseUp(event){
-		mouseDown = false;
-	}
+		scales.changeScale(ScaleType.MAJ);
+		//alert ("scaleArray: " +scales.scaleArray);
+		scales.changeRootNote(RootNote.E+36);
+		//alert ("rootNote: " +scales.rootNote);
+		scales.allocatePadNotes();
+		//alert ("padNotes: " + scales.notes);	
+		
+		pads.padWidth = Math.floor(canvas.width / pads.NUM_COLS);
+		pads.padHeight = Math.floor(canvas.height / pads.NUM_ROWS);	
+		//alert ("padPaints: " + pads.padPaints);
+		pads.drawPads(ctx);
 
-	function handleMove(event){
-		if (mouseDown){
-			var x = event.clientX;
-			var y = event.clientY;
-			//alert (x+","+y);
-			var colNum = Math.floor(x / pads.padWidth);
-			var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
+		function handleTouchStart(touchX,touchY){
+			var colNum = Math.floor(touchX / pads.padWidth);
+			var rowNum = pads.NUM_ROWS - Math.floor(touchY / pads.padHeight)-1;
 			var padNum = colNum + (rowNum * pads.NUM_COLS);
 			//alert(padNum);
-			document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-			if (lastPad != padNum){
-				playNote(padNum);
-				lastPad = padNum;
-			}
-		}
-	};
-
-	function playNote(padNum){
-		// TODO get MIDI from padNum and change to audiosynth format
-		// or modify audiosynth.
-		// keithwhor stuff
-		var padNote = (scales.notes[padNum])%12;
-		var octave = Math.floor(scales.notes[padNum]/12);
-		var synthNote = 'C';
-		var MIDINote = scales.notes[padNum];
-				
-		switch (padNote){
-			case 0: synthNote = 'C'; break;
-			case 1: synthNote = 'C#'; break;
-			case 2: synthNote = 'D'; break;
-			case 3: synthNote = 'D#'; break;
-			case 4: synthNote = 'E'; break;
-			case 5: synthNote = 'F'; break;
-			case 6: synthNote = 'F#'; break;
-			case 7: synthNote = 'G'; break;
-			case 8: synthNote = 'G#'; break;
-			case 9: synthNote = 'A'; break;
-			case 10: synthNote = 'A#'; break;
-			case 11: synthNote = 'B'; break;
+			//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
+			playNote(padNum);
 		};
+		function handleMouseDown(x,y){				
+				var colNum = Math.floor(x / pads.padWidth);
+				var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
+				var padNum = colNum + (rowNum * pads.NUM_COLS);
+				//alert(padNum);
+				//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
+				playNote(padNum);
+		};			
+		function playNote(padNum){
+			// var MIDINote = scales.notes[padNum];
+			var pow = (scales.notes[padNum] - 69) / 12.0;			
+			var frequency = 440 * Math.pow(2, pow);						
+			//alert(frequency);
+			beep(frequency);
+		};
+		function beep(freq) {
+			var oscillator = audioCtx.createOscillator();
+			var gainNode = audioCtx.createGain();
 
-		//alert(MIDINote);
-		Synth.play(0, synthNote, octave, 1,MIDINote);
-		//Synth.play(0, 'C#', octave, 1);
-		//Synth.play(0, 'C', octave, 1);
-		//Synth.play(0, 'D', octave, 1);
-		// end keithwhor stuff
-	};
+			oscillator.connect(gainNode);
+			gainNode.connect(audioCtx.destination);
+			gainNode.gain.value = 0.9;
+			oscillator.frequency.value = freq;
+			oscillator.type = 'sine';
+			oscillator.start();		
+			setTimeout(      
+				function(){
+					oscillator.stop();
+				}, 500
+			);  
+		}
   </script>
 </body>
 </html>
