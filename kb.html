@@ -7,49 +7,208 @@
   <meta name="description" content="MC Ricky G KB">
   <meta name="MC Ricky G" content="KB">
   <link rel="stylesheet" href="css/styles.css?v=1.0">
+<style type="text/css">
+  html {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+table{
+    width:100%;
+	height:100%;
+}
+</style>
   <!--[if lt IE 9]>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
   <![endif]-->
 </head>
-<body>	
-	<canvas id="myCanvas" width="1200" height="720" style="border:1px solid #d3d3d3;" onmousedown="handleMouseDown(event.clientX,event.clientY)">
-		Your browser does not support the HTML5 canvas tag.
-	</canvas>
-
-	<textarea id="mytextarea">Text to be changed</textarea> 
+<body onresize="pads.resizePads()">	
+	<table border = "1">
+         <tr>
+            <td width="10%">
+				Root Note:
+				<form name="rootNoteForm">
+					<input type="radio" name="rootNoteRadios" value=0 id='0'/>C<br>
+					<input type="radio" name="rootNoteRadios" value=1 id='1'/>C#<br>
+					<input type="radio" name="rootNoteRadios" value=2 id='2'/>D<br>
+					<input type="radio" name="rootNoteRadios" value=3 id='3'/>D#<br>
+					<input type="radio" name="rootNoteRadios" value=4 id='4'/>E<br>
+					<input type="radio" name="rootNoteRadios" value=5 id='5'/>F<br>
+					<input type="radio" name="rootNoteRadios" value=6 id='6'/>F#<br>
+					<input type="radio" name="rootNoteRadios" value=7 id='7'/>G<br>
+					<input type="radio" name="rootNoteRadios" value=8 id='8'/>G#<br>
+					<input type="radio" name="rootNoteRadios" value=9 id='9'/>A<br>
+					<input type="radio" name="rootNoteRadios" value=10 id='10'/>A#<br>
+					<input type="radio" name="rootNoteRadios" value=11 id='11'/>B<br>
+				</form>
+				<br/>
+				<br/>
+				Layout:
+				<form name="layoutForm">
+					<input type="radio" name="layoutRadios" value=1 id='UP_IN_FOURTHS'/>Up In Fourths<br>
+					<input type="radio" name="layoutRadios" value=2 id='UP_IN_THIRDS'/>Up In Thirds<br>
+					<input type="radio" name="layoutRadios" value=3 id='SEQUENTIAL'/>Sequential<br>
+				</form>
+				<br/>
+				<br/>Octave:
+				<div class="button_group">
+					<button onclick="add()" id="add">+ 1</button>
+					<div id="octave">0</div>					
+					<button onclick="subtract()" id="subtract">- 1</button>
+				</div>
+				<br/>
+				<br/>In Key:
+				<div class="button_group">
+					<input type="checkbox" id="inKeyCheckbox" onclick="changeInKey()">
+				</div>
+			</td>
+            <td width="80%" ><div id='padsCell'>
+				<canvas id="myCanvas" width="1200" height="720" onmousedown="handleMouseDown(event.clientX,event.clientY)" style="border:1px solid #d3d3d3;">
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
+				</div>
+			</td>
+            <td width="10%">
+				Scale:
+				<form name="scaleForm">
+					<input type="radio" name="scaleRadios" value=1 id='MAJ'/>MAJOR<br>
+					<input type="radio" name="scaleRadios" value=2 id='MIN'/>MINOR<br>
+					<input type="radio" name="scaleRadios" value=3 id='DOR'/>DORIAN<br>
+					<input type="radio" name="scaleRadios" value=4 id='MIX'/>MIXOLYDIAN<br>
+					<input type="radio" name="scaleRadios" value=5 id='LYD'/>LYDIAN<br>
+					<input type="radio" name="scaleRadios" value=6 id='PHR'/>PHRYGIAN<br>
+					<input type="radio" name="scaleRadios" value=7 id='LOC'/>LOCRIAN<br>
+					<input type="radio" name="scaleRadios" value=8 id='DIM'/>DIMINISHED<br>
+					<input type="radio" name="scaleRadios" value=9 id='WHOLE_HALF'/>WHOLE-HALF<br>
+					<input type="radio" name="scaleRadios" value=10 id='WHOLE'/>WHOLE<br>
+					<input type="radio" name="scaleRadios" value=11 id='MINOR_BLUES'/>MINOR BLUES<br>
+					<input type="radio" name="scaleRadios" value=12 id='MINOR_PENT'/>MINOR PENT<br>
+					<input type="radio" name="scaleRadios" value=13 id='MAJOR_PENT'/>MAJOR PENT<br>
+					<input type="radio" name="scaleRadios" value=14 id='HARMONIC_MIN'/>HARMONIC MIN<br>
+					<input type="radio" name="scaleRadios" value=15 id='MELODIC_MIN'/>MELODIC MIN<br>
+					<input type="radio" name="scaleRadios" value=16 id='SUPER_LOC'/>SUPER-LOCRIAN<br>
+					<input type="radio" name="scaleRadios" value=17 id='FOURTHS'/>FOURTHS<br>
+					<input type="radio" name="scaleRadios" value=18 id='THIRDS'/>THIRDS<br>
+				</form>
+				<textarea id="mytextarea">Text to be changed</textarea>
+			</td>
+        </tr>
+    </table>	
 	<script src="scripts/pads.js"></script>  
 	<script src="scripts/scales.js"></script>
 	<script>
 		var canvas=document.getElementById("myCanvas");
-		var ctx=canvas.getContext("2d");		
+		var ctx=canvas.getContext("2d"); 		
 		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-		// prevent scrolling
-		document.body.addEventListener('touchmove', function(event) {
-			event.preventDefault();
-		}, false); 
+		var rad = document.rootNoteForm.rootNoteRadios;		
+		for(var i = 0; i < rad.length; i++) {
+			rad[i].onclick = function() {				
+				scales.changeRootNote(this.value);
+				scales.allocatePadNotes();				
+				//document.getElementById('mytextarea').innerHTML = this.value;	
+				//alert("clicked " + this.value);
+			};
+		};
 
-		// handle initial touches
-		canvas.addEventListener('touchstart', function(event) {
-			for (var i = 0; i < event.touches.length; i++) {
-				var touch = event.touches[i];
+		var layoutRadios = document.layoutForm.layoutRadios;		
+		for(var i = 0; i < layoutRadios.length; i++) {
+			layoutRadios[i].onclick = function() {				
+				scales.changeLayout(this.value);
+				//document.getElementById('mytextarea').innerHTML = this.value;	
+				//alert("clicked " + this.value);
+			};
+		};
+		var scaleRadios = document.scaleForm.scaleRadios;		
+		for(var i = 0; i < scaleRadios.length; i++) {
+			scaleRadios[i].onclick = function() {				
+				scales.changeScale(this.value);
+				//document.getElementById('mytextarea').innerHTML = this.value;	
+				//alert("clicked " + this.value);
+			};
+		};
+		myInit();
+
+
+		function myInit() {
+			//alert("myInit()");			
+			preventLongPressMenu(document.getElementById('myCanvas'));			
+			scales.rootNote = 4;
+			document.getElementById("octave").innerHTML = scales.defaultOctave;
+			scales.octave = scales.defaultOctave;
+			scales.changeRootNote(scales.rootNote);			
+			scales.changeScale(scales.scaleType);			
+			//alert(scales.layoutType);
+			layoutRadio = document.getElementById(stringOfEnum(LayoutType,scales.layoutType));
+			layoutRadio.checked = true;
+			scaleRadio = document.getElementById(stringOfEnum(ScaleType,scales.scaleType));
+			scaleRadio.checked = true;
+			scalesRadio = document.getElementById(scales.rootNote);
+			scalesRadio.checked = true;
+			inKeyCheckbox = document.getElementById('inKeyCheckbox');
+			inKeyCheckbox.checked = scales.inKey;
+			//alert ("rootNote: " +scales.rootNote);
+			scales.allocatePadNotes();
+			//alert ("padNotes: " + scales.notes);			
+			pads.resizePads();			
+			// prevent scrolling
+			document.body.addEventListener('touchmove', function(event) {
 				event.preventDefault();
-				handleTouchStart(touch.pageX,touch.pageY);			
+			}, false);			
+			// handle initial touches
+			canvas.addEventListener('touchstart', function(event) {
+				for (var i = 0; i < event.touches.length; i++) {
+					var touch = event.touches[i];
+					event.preventDefault();
+					event.stopPropagation();
+					handleTouchStart(touch.pageX,touch.pageY);
+				}
+			}, false);
+		}
+		function stringOfEnum(e,value) {
+  			for (var k in e) if (e[k] == value) return k;
+			return null;
+		}
+		function changeInKey(){
+			scales.inKey = !scales.inKey;
+			pads.reRender();
+		}
+		function subtract(){
+			if (scales.octave >1){
+				scales.octave = scales.octave-1;
+				document.getElementById("octave").innerHTML = scales.octave;
+				scales.allocatePadNotes();
+				//alert(scales.notes);
 			}
-		}, false);
-
-		scales.changeScale(ScaleType.MAJ);
-		//alert ("scaleArray: " +scales.scaleArray);
-		scales.changeRootNote(RootNote.E+36);
-		//alert ("rootNote: " +scales.rootNote);
-		scales.allocatePadNotes();
-		//alert ("padNotes: " + scales.notes);	
-		
-		pads.padWidth = Math.floor(canvas.width / pads.NUM_COLS);
-		pads.padHeight = Math.floor(canvas.height / pads.NUM_ROWS);	
-		//alert ("padPaints: " + pads.padPaints);
-		pads.drawPads(ctx);
-
+		}
+		function add(){
+			if (scales.octave < 8){
+				scales.octave = scales.octave+1;
+				document.getElementById("octave").innerHTML = scales.octave;
+				scales.allocatePadNotes();
+				//alert(scales.notes);
+			}
+		}
+		function reset(){
+			scales.octave = scales.defaultOctave;
+			document.getElementById("octave").innerHTML = scales.defaultOctave;
+			scales.allocatePadNotes();
+		}
+		function absorbEvent_(event) {
+			var e = event || window.event;
+			e.preventDefault && e.preventDefault();
+			e.stopPropagation && e.stopPropagation();
+			e.cancelBubble = true;
+			e.returnValue = false;
+			return false;
+		};
+		function preventLongPressMenu(node) {
+			node.ontouchstart = absorbEvent_;
+			node.ontouchmove = absorbEvent_;
+			node.ontouchend = absorbEvent_;
+			node.ontouchcancel = absorbEvent_;
+		}
 		function handleTouchStart(touchX,touchY){
+			touchX = touchX - pads.padsX;
+			touchY = touchY - pads.padsY;
 			var colNum = Math.floor(touchX / pads.padWidth);
 			var rowNum = pads.NUM_ROWS - Math.floor(touchY / pads.padHeight)-1;
 			var padNum = colNum + (rowNum * pads.NUM_COLS);
@@ -57,7 +216,9 @@
 			//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
 			playNote(padNum);
 		};
-		function handleMouseDown(x,y){				
+		function handleMouseDown(x,y){		
+				x = x - pads.padsX;
+				y = y - pads.padsY;
 				var colNum = Math.floor(x / pads.padWidth);
 				var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
 				var padNum = colNum + (rowNum * pads.NUM_COLS);
@@ -66,10 +227,8 @@
 				playNote(padNum);
 		};			
 		function playNote(padNum){
-			// var MIDINote = scales.notes[padNum];
 			var pow = (scales.notes[padNum] - 69) / 12.0;			
-			var frequency = 440 * Math.pow(2, pow);						
-			//alert(frequency);
+			var frequency = 440 * Math.pow(2, pow);
 			beep(frequency);
 		};
 		function beep(freq) {
@@ -78,7 +237,7 @@
 
 			oscillator.connect(gainNode);
 			gainNode.connect(audioCtx.destination);
-			gainNode.gain.value = 0.9;
+			gainNode.gain.value = 0.1;
 			oscillator.frequency.value = freq;
 			oscillator.type = 'sine';
 			oscillator.start();		

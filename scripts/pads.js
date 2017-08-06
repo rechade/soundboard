@@ -7,9 +7,33 @@ var pads = {
 	blackPaint : "#B2BABB",
 	hitPaint : "#DAF7A6",
     padPaints : [],
+    gustoPaints : ["#5DADE2","#EC407A","#FFEB3B","#4A148C","#F57C00","#1E88E5","#E91E63","#00FF66","#BA68C8","#FBC02D","#0000CC","#FF5722"],    
     padHeight : 0,
     padWidth : 0,
+    padsX : 0,
+    padsY : 0,
     padRects : [],
+    padsRect : null,
+    reRender : function() {
+        //alert("reRender()");
+        scales.allocatePadNotes();
+        //alert("reRender()");
+        pads.drawPads(ctx);
+		inKeyCheckbox = document.getElementById('inKeyCheckbox');
+		inKeyCheckbox.checked = scales.inKey;  
+    },
+    resizePads : function() {
+        //alert("resizePads()");
+        pads.padWidth = Math.floor(document.getElementById('padsCell').offsetWidth / pads.NUM_COLS);
+        pads.padHeight = Math.floor(document.getElementById('padsCell').offsetHeight / pads.NUM_ROWS);					
+        ctx.canvas.width = pads.padWidth * pads.NUM_COLS;
+        ctx.canvas.height = pads.padHeight * pads.NUM_ROWS;
+        //alert ("padPaints: " + pads.padPaints);
+        pads.drawPads(ctx);			
+        pads.padsRect = document.getElementById('padsCell').getBoundingClientRect();
+        pads.padsX = pads.padsRect.left;
+        pads.padsY = pads.padsRect.top;
+    },
 	drawPad : function (ctx, colour, x, y, width, height) {
 		ctx.beginPath();
 		ctx.fillStyle=colour;
@@ -19,11 +43,12 @@ var pads = {
         
         ctx.lineWidth="1";
         ctx.strokeStyle="black";
-        ctx.rect(x+1,y+1,width-2,height-2);
+        ctx.rect(x,y,width,height);
 		ctx.stroke();
     },
 
     drawPads : function (ctx) {
+        //alert("drawPads()");
         var x = 0;
         var y = 0;
         var i=0;
