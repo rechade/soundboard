@@ -174,6 +174,15 @@
 					handleTouchStart(touch.pageX,touch.pageY,touch.identifier);
 				}
 			}, false);
+			canvas.addEventListener("touchend",function(event){
+				for(var i = 0; i<event.changedTouches.length; i++){
+					var touch = event.changedTouches[i];
+					stopNote(oscillators[touch.identifier,gainNodes[touch.identifier]]);
+					delete gainNodes[touch.identifier];
+					delete oscillators[touch.identifier];
+					delete touches[touch.identifier];
+				}
+			}, false);
 		}
 		function handleTouchStart(touchX,touchY,touchIdentifier){
 			var padNum = calcPadNum(touchX,touchY);			
@@ -185,22 +194,10 @@
 		};
 		
 		var osc;		
-		var gainNode;
-		
-		function handleMouseDown(x,y){
-				var padNum = calcPadNum(x,y);	
-				osc = audioCtx.createOscillator();
-				gainNode = audioCtx.createGain();
-				//alert(padNum);
-				//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-				playNote(padNum,osc,gainNode);
-		};
-		function handleMouseUp(event){
-			stopNote(osc,gainNode);
-		}
+		var gainNode;		
 
 		function playNote(padNum,osc,gainNode){
-			var pow = (scales.notes[padNum] - 69) / 12.0;			
+			var pow = (scales.notes[padNum] - 69) / 12.0;
 			var frequency = 440 * Math.pow(2, pow);
 			//osc = audioCtx.createOscillator();
 			osc.connect(gainNode);
@@ -210,17 +207,28 @@
 			osc.type = 'sine';
 			osc.start();
 			/*
-			setTimeout(      
+			setTimeout(
 				function(){
 					osc.stop();
 				}, 500
-			);  
+			);
 			*/
 		};
 		function stopNote(osc,gainNode){
 			osc.stop();
 			gainNode.disconnect();
 			osc.disconnect();
+		}		
+		function handleMouseDown(x,y){
+				var padNum = calcPadNum(x,y);	
+				osc = audioCtx.createOscillator();
+				gainNode = audioCtx.createGain();
+				//alert(padNum);
+				//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
+				playNote(padNum,osc,gainNode);
+		};			
+		function handleMouseUp(event){
+			stopNote(osc,gainNode);
 		}
 		function calcPadNum(x,y){
 			x = x - pads.padsX;
