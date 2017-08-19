@@ -69,7 +69,7 @@
 				</div>
 			</td>
             <td width="80%" ><div id='padsCell' style="height:100%">
-				<canvas id="myCanvas" onmousedown="handleMouseDown(event.clientX,event.clientY)" style="border:1px solid #d3d3d3;">
+				<canvas id="myCanvas" onmousedown="handleMouseDown(event.clientX,event.clientY)" onMouseUp="handleMouseUp(event)" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
 				</div>
@@ -106,7 +106,11 @@
 		var canvas=document.getElementById("myCanvas");
 		var ctx=canvas.getContext("2d"); 		
 		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-		var rad = document.rootNoteForm.rootNoteRadios;		
+		var rad = document.rootNoteForm.rootNoteRadios;
+		var MAX_TOUCHES = 5;
+		var touches = new Array(MAX_TOUCHES);
+		var oscillators = new Array(MAX_TOUCHES);
+
 		for(var i = 0; i < rad.length; i++) {
 			rad[i].onclick = function() {				
 				scales.changeRootNote(this.value);
@@ -134,9 +138,8 @@
 		};
 		myInit();
 
-
 		function myInit() {
-			//alert("myInit()");			
+			//alert("myInit()");
 			preventLongPressMenu(document.getElementById('myCanvas'));			
 			scales.rootNote = 4;
 			document.getElementById("octave").innerHTML = scales.defaultOctave;
@@ -169,6 +172,59 @@
 					handleTouchStart(touch.pageX,touch.pageY);
 				}
 			}, false);
+		}
+		function handleTouchStart(touchX,touchY){
+			touchX = touchX - pads.padsX;
+			touchY = touchY - pads.padsY;
+			var colNum = Math.floor(touchX / pads.padWidth);
+			var rowNum = pads.NUM_ROWS - Math.floor(touchY / pads.padHeight)-1;
+			var padNum = colNum + (rowNum * pads.NUM_COLS);
+			//alert(padNum);
+			//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
+			playNote(padNum);
+		};
+		function handleMouseDown(x,y){
+				var padNum = calcPadNum(x,y);
+				
+				//alert(padNum);
+				//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
+				playNote(padNum);
+		};
+		function calcPadNum(x,y){
+			x = x - pads.padsX;
+			y = y - pads.padsY;
+			var colNum = Math.floor(x / pads.padWidth);
+			var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
+			return colNum + (rowNum * pads.NUM_COLS);
+		};
+		function handleMouseUp(event){
+			stopNote();
+		}
+		var osc = null;
+		function playNote(padNum){
+			var gainNode = null;
+			var pow = (scales.notes[padNum] - 69) / 12.0;			
+			var frequency = 440 * Math.pow(2, pow);
+			osc = audioCtx.createOscillator();
+			gainNode = audioCtx.createGain();
+			osc.connect(gainNode);
+			gainNode.connect(audioCtx.destination);
+			gainNode.gain.value = 0.1;
+			osc.frequency.value = frequency;
+			osc.type = 'sine';
+			osc.start();
+			/*
+			setTimeout(      
+				function(){
+					osc.stop();
+				}, 500
+			);  
+			*/
+		};
+		function stopNote(){
+			osc.stop();
+			gainNode.disconnect();
+			osc.disconnect();
 		}
 		function stringOfEnum(e,value) {
   			for (var k in e) if (e[k] == value) return k;
@@ -212,47 +268,6 @@
 			node.ontouchmove = absorbEvent_;
 			node.ontouchend = absorbEvent_;
 			node.ontouchcancel = absorbEvent_;
-		}
-		function handleTouchStart(touchX,touchY){
-			touchX = touchX - pads.padsX;
-			touchY = touchY - pads.padsY;
-			var colNum = Math.floor(touchX / pads.padWidth);
-			var rowNum = pads.NUM_ROWS - Math.floor(touchY / pads.padHeight)-1;
-			var padNum = colNum + (rowNum * pads.NUM_COLS);
-			//alert(padNum);
-			//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-			playNote(padNum);
-		};
-		function handleMouseDown(x,y){		
-				x = x - pads.padsX;
-				y = y - pads.padsY;
-				var colNum = Math.floor(x / pads.padWidth);
-				var rowNum = pads.NUM_ROWS - Math.floor(y / pads.padHeight)-1;
-				var padNum = colNum + (rowNum * pads.NUM_COLS);
-				//alert(padNum);
-				//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-				playNote(padNum);
-		};			
-		function playNote(padNum){
-			var pow = (scales.notes[padNum] - 69) / 12.0;			
-			var frequency = 440 * Math.pow(2, pow);
-			beep(frequency);
-		};
-		function beep(freq) {
-			var oscillator = audioCtx.createOscillator();
-			var gainNode = audioCtx.createGain();
-
-			oscillator.connect(gainNode);
-			gainNode.connect(audioCtx.destination);
-			gainNode.gain.value = 0.1;
-			oscillator.frequency.value = freq;
-			oscillator.type = 'sine';
-			oscillator.start();		
-			setTimeout(      
-				function(){
-					oscillator.stop();
-				}, 500
-			);  
 		}
   </script>
 </body>
