@@ -108,8 +108,9 @@
 		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 		var rad = document.rootNoteForm.rootNoteRadios;
 		var MAX_TOUCHES = 5;
-		var touches = new Array(MAX_TOUCHES);
-		var oscillators = new Array(MAX_TOUCHES);
+		var touches = {};
+		var oscillators = {};
+		var gainNodes = {};
 
 		for(var i = 0; i < rad.length; i++) {
 			rad[i].onclick = function() {				
@@ -167,35 +168,41 @@
 			canvas.addEventListener('touchstart', function(event) {
 				for (var i = 0; i < event.touches.length; i++) {
 					var touch = event.touches[i];
+					touches[touch.identifier]=touch;
 					event.preventDefault();
 					event.stopPropagation();
-					handleTouchStart(touch.pageX,touch.pageY);
+					handleTouchStart(touch.pageX,touch.pageY,touch.identifier);
 				}
 			}, false);
 		}
-		function handleTouchStart(touchX,touchY){
+		function handleTouchStart(touchX,touchY,touchIdentifier){
 			var padNum = calcPadNum(touchX,touchY);			
 			//alert(padNum);
 			//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-			playNote(padNum);
+			oscillators[touchIdentifier]=audioCtx.createOscillator();			
+			gainNodes[touchIdentifier]=audioCtx.createGain();
+			playNote(padNum,oscillators[touchIdentifier],gainNodes[touchIdentifier]);
 		};
+		
+		var osc;		
+		var gainNode;
+		
 		function handleMouseDown(x,y){
-				var padNum = calcPadNum(x,y);				
+				var padNum = calcPadNum(x,y);	
+				osc = audioCtx.createOscillator();
+				gainNode = audioCtx.createGain();
 				//alert(padNum);
 				//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-				playNote(padNum);
+				playNote(padNum,osc,gainNode);
 		};
 		function handleMouseUp(event){
-			stopNote();
+			stopNote(osc,gainNode);
 		}
-		var osc = null;
-		var gainNode = null;
 
-		function playNote(padNum){
+		function playNote(padNum,osc,gainNode){
 			var pow = (scales.notes[padNum] - 69) / 12.0;			
 			var frequency = 440 * Math.pow(2, pow);
-			osc = audioCtx.createOscillator();
-			gainNode = audioCtx.createGain();
+			//osc = audioCtx.createOscillator();
 			osc.connect(gainNode);
 			gainNode.connect(audioCtx.destination);
 			gainNode.gain.value = 0.1;
@@ -210,7 +217,7 @@
 			);  
 			*/
 		};
-		function stopNote(){
+		function stopNote(osc,gainNode){
 			osc.stop();
 			gainNode.disconnect();
 			osc.disconnect();
