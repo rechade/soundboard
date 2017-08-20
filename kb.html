@@ -69,12 +69,15 @@
 				</div>
 			</td>
             <td width="80%" ><div id='padsCell' style="height:100%">
-				<canvas id="myCanvas" onmousedown="handleMouseDown(event.clientX,event.clientY)" onMouseUp="handleMouseUp(event)" style="border:1px solid #d3d3d3;">
+				<canvas id="myCanvas" onmousedown="handleTouchStart(event.clientX,event.clientY,event.button)" onmouseup="handleTouchEnd(event.button)" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
 				</div>
 			</td>
             <td width="10%">
+				<textarea id="mytextarea" rows="4">Text to be changed</textarea>
+				<textarea id="mytouchtext" rows="4">Text to be changed</textarea>
+				<textarea id="mynumtouchestext" rows="4">Text to be changed</textarea>
 				Scale:
 				<form name="scaleForm">
 					<input type="radio" name="scaleRadios" value=1 id='MAJ'/>MAJOR<br>
@@ -95,8 +98,7 @@
 					<input type="radio" name="scaleRadios" value=16 id='SUPER_LOC'/>SUPER-LOCRIAN<br>
 					<input type="radio" name="scaleRadios" value=17 id='FOURTHS'/>FOURTHS<br>
 					<input type="radio" name="scaleRadios" value=18 id='THIRDS'/>THIRDS<br>
-				</form>
-				<textarea id="mytextarea">Text to be changed</textarea>
+				</form>				
 			</td>
         </tr>
     </table>	
@@ -107,13 +109,13 @@
 		var ctx=canvas.getContext("2d"); 		
 		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 		var rad = document.rootNoteForm.rootNoteRadios;
-		var MAX_TOUCHES = 5;
-		var touches = {};
-		var oscillators = {};
-		var gainNodes = {};
+		var MAX_TOUCHES = 4;
+		//var touches = {};
+		var oscillators = [];
+		var gainNodes = [];
 
 		for(var i = 0; i < rad.length; i++) {
-			rad[i].onclick = function() {				
+			rad[i].onclick = function() {		
 				scales.changeRootNote(this.value);
 				scales.allocatePadNotes();				
 				//document.getElementById('mytextarea').innerHTML = this.value;	
@@ -141,6 +143,18 @@
 
 		function myInit() {
 			//alert("myInit()");
+			var osc=null;
+			var gainNode=null;
+			for (var i=0; i<MAX_TOUCHES; i++){
+				osc = audioCtx.createOscillator();
+				gainNode = audioCtx.createGain();	
+				gainNode.connect(audioCtx.destination);
+				gainNode.gain.value = 0.1;
+				osc.type = 'sine';
+				osc.start();
+				oscillators[i]=osc;
+				gainNodes[i]=gainNode;				
+			}
 			preventLongPressMenu(document.getElementById('myCanvas'));			
 			scales.rootNote = 4;
 			document.getElementById("octave").innerHTML = scales.defaultOctave;
@@ -162,74 +176,75 @@
 			pads.resizePads();			
 			// prevent scrolling
 			document.body.addEventListener('touchmove', function(event) {
-				event.preventDefault();
-			}, false);			
+				//event.preventDefault();
+				/*
+				setTimeout(
+					function(){
+						osc.stop();
+					}, 500
+				);
+				*/
+			}, false);
 			// handle initial touches
 			canvas.addEventListener('touchstart', function(event) {
-				for (var i = 0; i < event.touches.length; i++) {
-					var touch = event.touches[i];
-					touches[touch.identifier]=touch;
+				var touchId = event.touches.length - 1;
+				//for (var i = 0; i < event.touches.length; i++) {
+					var pageX = event.touches[touchId].pageX;
+					var pageY = event.touches[touchId].pageY;
+					//var touchId = event.touches[i].identifier;					
+					//touches[touchId] = touchId;
 					event.preventDefault();
 					event.stopPropagation();
-					handleTouchStart(touch.pageX,touch.pageY,touch.identifier);
-				}
+					handleTouchStart(pageX,pageY,touchId);
+				//}
 			}, false);
+
 			canvas.addEventListener("touchend",function(event){
-				for(var i = 0; i<event.changedTouches.length; i++){
-					var touch = event.changedTouches[i];
-					stopNote(oscillators[touch.identifier,gainNodes[touch.identifier]]);
-					delete gainNodes[touch.identifier];
-					delete oscillators[touch.identifier];
-					delete touches[touch.identifier];
+				for(var i = 0; i<event.changedTouches.length; i++){										
+					handleTouchEnd(event.changedTouches[i].identifier);					
 				}
 			}, false);
-		}
-		function handleTouchStart(touchX,touchY,touchIdentifier){
-			var padNum = calcPadNum(touchX,touchY);			
-			//alert(padNum);
-			//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-			oscillators[touchIdentifier]=audioCtx.createOscillator();			
-			gainNodes[touchIdentifier]=audioCtx.createGain();
-			playNote(padNum,oscillators[touchIdentifier],gainNodes[touchIdentifier]);
 		};
-		
-		var osc;		
-		var gainNode;		
+		var numTouches=0;
+		function handleTouchStart(touchX,touchY,touchId){
+			if (numTouches < MAX_TOUCHES) {
+				document.getElementById('mytouchtext').innerHTML = "touchstart:"+touchId;
+				var padNum = calcPadNum(touchX,touchY);
+				document.getElementById('mytextarea').innerHTML = "oscillators"+oscillators;
+				playNote(padNum,oscillators[touchId],gainNodes[touchId]);
+				numTouches++;
+				document.getElementById('mynumtouchestext').innerHTML =  "numTouches:"+numTouches;
+			}
+		};
+
+		function handleTouchEnd(touchId){
+			if (numTouches > 0){
+				document.getElementById('mytouchtext').innerHTML = "touchend:"+touchId;
+				stopNote(oscillators[touchId],gainNodes[touchId]);
+				//delete gainNodes[touchId];
+				//delete oscillators[touchId];
+				numTouches--;
+				document.getElementById('mynumtouchestext').innerHTML = "numTouches:"+numTouches;
+				document.getElementById('mytextarea').innerHTML = "oscillators"+oscillators;
+				//delete touches[touchId];
+			}
+		};
 
 		function playNote(padNum,osc,gainNode){
+			//document.getElementById('mytextarea').innerHTML = "playNote:"+padNum;
 			var pow = (scales.notes[padNum] - 69) / 12.0;
 			var frequency = 440 * Math.pow(2, pow);
-			//osc = audioCtx.createOscillator();
+			osc.frequency.value = frequency;								
 			osc.connect(gainNode);
-			gainNode.connect(audioCtx.destination);
-			gainNode.gain.value = 0.1;
-			osc.frequency.value = frequency;
-			osc.type = 'sine';
-			osc.start();
-			/*
-			setTimeout(
-				function(){
-					osc.stop();
-				}, 500
-			);
-			*/
 		};
+
 		function stopNote(osc,gainNode){
-			osc.stop();
-			gainNode.disconnect();
+			document.getElementById('mytextarea').innerHTML = "stopNote:";
+			//osc.stop();
+			//gainNode.disconnect();
 			osc.disconnect();
-		}		
-		function handleMouseDown(x,y){
-				var padNum = calcPadNum(x,y);	
-				osc = audioCtx.createOscillator();
-				gainNode = audioCtx.createGain();
-				//alert(padNum);
-				//document.getElementById('mytextarea').innerHTML = "M=" + scales.notes[padNum];		
-				playNote(padNum,osc,gainNode);
-		};			
-		function handleMouseUp(event){
-			stopNote(osc,gainNode);
-		}
+		};
+
 		function calcPadNum(x,y){
 			x = x - pads.padsX;
 			y = y - pads.padsY;
@@ -240,11 +255,11 @@
 		function stringOfEnum(e,value) {
   			for (var k in e) if (e[k] == value) return k;
 			return null;
-		}
+		};
 		function changeInKey(){
 			scales.inKey = !scales.inKey;
 			pads.reRender();
-		}
+		};
 		function subtract(){
 			if (scales.octave >1){
 				scales.octave = scales.octave-1;
@@ -252,7 +267,7 @@
 				scales.allocatePadNotes();
 				//alert(scales.notes);
 			}
-		}
+		};
 		function add(){
 			if (scales.octave < 8){
 				scales.octave = scales.octave+1;
@@ -260,12 +275,12 @@
 				scales.allocatePadNotes();
 				//alert(scales.notes);
 			}
-		}
+		};
 		function reset(){
 			scales.octave = scales.defaultOctave;
 			document.getElementById("octave").innerHTML = scales.defaultOctave;
 			scales.allocatePadNotes();
-		}
+		};
 		function absorbEvent_(event) {
 			var e = event || window.event;
 			e.preventDefault && e.preventDefault();
@@ -279,7 +294,7 @@
 			node.ontouchmove = absorbEvent_;
 			node.ontouchend = absorbEvent_;
 			node.ontouchcancel = absorbEvent_;
-		}
+		};
   </script>
 </body>
 </html>
