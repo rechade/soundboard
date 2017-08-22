@@ -42,7 +42,7 @@ var RootNote = {
 
 var scales = {
 	rootNote : RootNote.C,
-	scaleType : ScaleType.MIN,
+	scaleType : ScaleType.MAJ,
 	layoutType : LayoutType.UP_IN_FOURTHS,
 	inKey : true,
 	scaleArray : [],

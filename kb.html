@@ -77,8 +77,7 @@
             <td>				
 				<!--textarea id="mytextarea" rows="1"></textarea>
 				<textarea id="mytouchtext" rows="1"></textarea>
-				<textarea id="mynumtouchestext" rows="1"></textarea-->
-				
+				<textarea id="mynumtouchestext" rows="1"></textarea-->				
 				Scale:
 				<form name="scaleForm">
 					<input type="radio" name="scaleRadios" value=0 id='MAJ'/>MAJ<br>
@@ -110,42 +109,37 @@
 		var ctx=canvas.getContext("2d"); 		
 		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 		var rootNoteRadios = document.rootNoteForm.rootNoteRadios;
-		var MAX_TOUCHES = 4;
+		var MAX_TOUCHES = 5;
 		var touches = [];
 		var oscillators = [];
 		var gainNodes = [];
+		var touchedPads = [];
 
 		for(var i = 0; i < rootNoteRadios.length; i++) {
 			rootNoteRadios[i].onclick = function() {		
 				scales.changeRootNote(this.value);
-				scales.allocatePadNotes();				
-				//document.getElementById('mytextarea').innerHTML = this.value;	
-				//alert("clicked " + this.value);
+				scales.allocatePadNotes();								
 			};
 		};
 
-		var layoutRadios = document.layoutForm.layoutRadios;		
+		var layoutRadios = document.layoutForm.layoutRadios;				
 		for(var i = 0; i < layoutRadios.length; i++) {
 			layoutRadios[i].onclick = function() {				
-				scales.changeLayout(this.value);
-				//document.getElementById('mytextarea').innerHTML = this.value;	
-				//alert("clicked " + this.value);
+				scales.changeLayout(this.value);				
 			};
 		};
+
 		var scaleRadios = document.scaleForm.scaleRadios;		
 		for(var i = 0; i < scaleRadios.length; i++) {
 			scaleRadios[i].onclick = function() {				
 				scales.changeScale(this.value);		
         		scales.allocatePadNotes();
-				pads.reRender();
-				//document.getElementById('mytextarea').innerHTML = this.value;	
-				//alert("clicked " + this.value);
+				pads.reRender();				
 			};
 		};
 		myInit();
 
-		function myInit() {
-			//alert("myInit()");
+		function myInit() {			
 			var osc=null;
 			var gainNode=null;
 			for (var i=0; i<MAX_TOUCHES; i++){
@@ -156,15 +150,15 @@
 				osc.type = 'sine';
 				osc.start();
 				oscillators[i]=osc;
-				gainNodes[i]=gainNode;				
-			}
+				gainNodes[i]=gainNode;
+				touchedPads[i]=-99;
+			}			
 			preventLongPressMenu(document.getElementById('myCanvas'));		
 			document.getElementById("octave").innerHTML = scales.octave;
 			scales.changeRootNote(scales.rootNote);			
 			scales.changeScale(scales.scaleType);	
         	scales.allocatePadNotes();
-			pads.reRender();		
-			//alert(scales.layoutType);
+			pads.reRender();					
 			layoutRadio = document.getElementById(stringOfEnum(LayoutType,scales.layoutType));
 			layoutRadio.checked = true;
 			scaleRadio = document.getElementById(stringOfEnum(ScaleType,scales.scaleType));
@@ -172,13 +166,34 @@
 			scalesRadio = document.getElementById(scales.rootNote);
 			scalesRadio.checked = true;
 			inKeyCheckbox = document.getElementById('inKeyCheckbox');
-			inKeyCheckbox.checked = scales.inKey;
-			//alert ("rootNote: " +scales.rootNote);
-			//scales.allocatePadNotes();
-			//alert ("padNotes: " + scales.notes);			
+			inKeyCheckbox.checked = scales.inKey;			
 			pads.resizePads();			
 			// prevent scrolling
-			document.body.addEventListener('touchmove', function(event) {
+			document.body.addEventListener('touchmove', function(event) {			
+				event.preventDefault();
+				event.stopPropagation();
+				event.preventDefault();
+				/*
+				setTimeout(
+					function(){
+						osc.stop();
+					}, 500
+				);
+				*/
+			}, false);
+			canvas.addEventListener('touchmove', function(event) {
+				for (var i = 0; i < event.changedTouches.length; i++) {
+					var touchId = event.touches[i].identifier;
+					var x = event.changedTouches[touchId].pageX;
+					var y = event.changedTouches[touchId].pageY;									
+					var padNum = calcPadNum(x,y);
+					if (touchedPads[touchId]!=padNum){
+						playNote(padNum, oscillators[touchId],gainNodes[touchId]);
+					}					
+					event.preventDefault();
+					event.stopPropagation();
+					touchedPads[touchId]=padNum;					
+				} 
 				//event.preventDefault();
 				/*
 				setTimeout(
@@ -198,9 +213,10 @@
 						touches[touchId] = true;
 						event.preventDefault();
 						event.stopPropagation();
-						handleTouchStart(pageX,pageY,touchId);
+						touchedPads[touchId]=handleTouchStart(pageX,pageY,touchId);						
 					}
 				}
+				//document.getElementById("mytextarea").innerHTML = touchedPads;
 			}, false);
 
 			canvas.addEventListener("touchend",function(event){
@@ -211,38 +227,32 @@
 		};
 		var numTouches=0;
 		function handleTouchStart(touchX,touchY,touchId){
-			if (numTouches < MAX_TOUCHES) {
-				//document.getElementById('mytouchtext').innerHTML = "touchstart:"+touchId;
-				var padNum = calcPadNum(touchX,touchY);
-				//document.getElementById('mytextarea').innerHTML = "oscillators"+oscillators;
+			var padNum;
+			if (numTouches < MAX_TOUCHES) {				
+				padNum = calcPadNum(touchX,touchY);				
 				playNote(padNum,oscillators[touchId],gainNodes[touchId]);
-				numTouches++;
-				//document.getElementById('mynumtouchestext').innerHTML =  "numTouches:"+numTouches;
+				numTouches++;				
 			}
+			return padNum;
 		};
-
 		function handleTouchEnd(touchId){
-			if (numTouches > 0){
-				//document.getElementById('mytouchtext').innerHTML = "touchend:"+touchId;
+			if (numTouches > 0){				
 				stopNote(oscillators[touchId],gainNodes[touchId]);
 				numTouches--;
-				//document.getElementById('mynumtouchestext').innerHTML = "numTouches:"+numTouches;
-				//document.getElementById('mytextarea').innerHTML = "oscillators"+oscillators;
 				touches[touchId]=false;
+				touchedPads[touchId]=-99;
+				//document.getElementById("mytextarea").innerHTML = touchedPads;
 			}
 		};
-		function playNote(padNum,osc,gainNode){
-			//document.getElementById('mytextarea').innerHTML = "playNote:"+padNum;
+		function playNote(padNum,osc,gainNode){			
 			var pow = (scales.notes[padNum] - 69) / 12.0;
 			var frequency = 440 * Math.pow(2, pow);
 			osc.frequency.value = frequency;								
 			osc.connect(gainNode);
 		};
-		function stopNote(osc,gainNode){
-			//document.getElementById('mytextarea').innerHTML = "stopNote:";
+		function stopNote(osc,gainNode){			
 			osc.disconnect();
 		};
-
 		function calcPadNum(x,y){
 			x = x - pads.padsX;
 			y = y - pads.padsY;
@@ -263,8 +273,7 @@
 			if (scales.octave >1){
 				scales.octave = scales.octave-1;
 				document.getElementById("octave").innerHTML = scales.octave;
-				scales.allocatePadNotes();
-				//alert(scales.notes);
+				scales.allocatePadNotes();				
 			}
 		};
 		function add(){
@@ -272,7 +281,6 @@
 				scales.octave = scales.octave+1;
 				document.getElementById("octave").innerHTML = scales.octave;
 				scales.allocatePadNotes();
-				//alert(scales.notes);
 			}
 		};
 		function absorbEvent_(event) {
