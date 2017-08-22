@@ -43,7 +43,7 @@ var RootNote = {
 var scales = {
 	rootNote : RootNote.C,
 	scaleType : ScaleType.MIN,
-	layoutType : LayoutType.UP_IN_THIRDS,
+	layoutType : LayoutType.UP_IN_FOURTHS,
 	inKey : true,
 	scaleArray : [],
 	notes : [],
@@ -320,7 +320,6 @@ var scales = {
 			default: 
 				scales.scaleArray = [true, false, true, false, true, true, false, true, false, true, false, true];	
 				break;
-		}
-				alert (scales.scaleArray);		
+		}				
 	},	
 };

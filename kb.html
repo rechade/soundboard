@@ -31,7 +31,7 @@
 <body onresize="pads.resizePads()">	
 	<table border = "1">
          <tr>
-            <td width="10%">
+            <td>
 				Root Note:
 				<form name="rootNoteForm">
 					<input type="radio" name="rootNoteRadios" value=0 id='0'/>C<br>
@@ -51,9 +51,9 @@
 				<br/>
 				Layout:
 				<form name="layoutForm">
-					<input type="radio" name="layoutRadios" value=0 id='UP_IN_FOURTHS'/>Up In Fourths<br>
-					<input type="radio" name="layoutRadios" value=1 id='UP_IN_THIRDS'/>Up In Thirds<br>
-					<input type="radio" name="layoutRadios" value=2 id='SEQUENTIAL'/>Sequential<br>
+					<input type="radio" name="layoutRadios" value=0 id='UP_IN_FOURTHS'/>^4s<br>
+					<input type="radio" name="layoutRadios" value=1 id='UP_IN_THIRDS'/>^3s<br>
+					<input type="radio" name="layoutRadios" value=2 id='SEQUENTIAL'/>Seq<br>
 				</form>
 				<br/>
 				<br/>Octave:
@@ -68,34 +68,35 @@
 					<input type="checkbox" id="inKeyCheckbox" onclick="changeInKey()">
 				</div>
 			</td>
-            <td width="80%" ><div id='padsCell' style="height:100%">
+            <td width="100%" ><div id='padsCell' style="height:100%">
 				<canvas id="myCanvas" onmousedown="handleTouchStart(event.clientX,event.clientY,event.button)" onmouseup="handleTouchEnd(event.button)" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
 				</div>
 			</td>
-            <td width="10%">
-				<textarea id="mytextarea" rows="1">Text to be changed</textarea>
-				<textarea id="mytouchtext" rows="1">Text to be changed</textarea>
-				<textarea id="mynumtouchestext" rows="1">Text to be changed</textarea>
+            <td>				
+				<!--textarea id="mytextarea" rows="1"></textarea>
+				<textarea id="mytouchtext" rows="1"></textarea>
+				<textarea id="mynumtouchestext" rows="1"></textarea-->
+				
 				Scale:
 				<form name="scaleForm">
-					<input type="radio" name="scaleRadios" value=0 id='MAJ'/>MAJOR<br>
-					<input type="radio" name="scaleRadios" value=1 id='MIN'/>MINOR<br>
-					<input type="radio" name="scaleRadios" value=2 id='DOR'/>DORIAN<br>
-					<input type="radio" name="scaleRadios" value=3 id='MIX'/>MIXOLYDIAN<br>
-					<input type="radio" name="scaleRadios" value=4 id='LYD'/>LYDIAN<br>
-					<input type="radio" name="scaleRadios" value=5 id='PHR'/>PHRYGIAN<br>
-					<input type="radio" name="scaleRadios" value=6 id='LOC'/>LOCRIAN<br>
-					<input type="radio" name="scaleRadios" value=7 id='DIM'/>DIMINISHED<br>
-					<input type="radio" name="scaleRadios" value=8 id='WHOLE_HALF'/>WHOLE-HALF<br>
-					<input type="radio" name="scaleRadios" value=9 id='WHOLE'/>WHOLE<br>
-					<input type="radio" name="scaleRadios" value=10 id='MINOR_BLUES'/>MINOR BLUES<br>
-					<input type="radio" name="scaleRadios" value=11 id='MINOR_PENT'/>MINOR PENT<br>
-					<input type="radio" name="scaleRadios" value=12 id='MAJOR_PENT'/>MAJOR PENT<br>
-					<input type="radio" name="scaleRadios" value=13 id='HARMONIC_MIN'/>HARMONIC MIN<br>
-					<input type="radio" name="scaleRadios" value=14 id='MELODIC_MIN'/>MELODIC MIN<br>
-					<input type="radio" name="scaleRadios" value=15 id='SUPER_LOC'/>SUPER-LOCRIAN<br>
+					<input type="radio" name="scaleRadios" value=0 id='MAJ'/>MAJ<br>
+					<input type="radio" name="scaleRadios" value=1 id='MIN'/>MIN<br>
+					<input type="radio" name="scaleRadios" value=2 id='DOR'/>DOR<br>
+					<input type="radio" name="scaleRadios" value=3 id='MIX'/>MIX<br>
+					<input type="radio" name="scaleRadios" value=4 id='LYD'/>LYD<br>
+					<input type="radio" name="scaleRadios" value=5 id='PHR'/>PHR<br>
+					<input type="radio" name="scaleRadios" value=6 id='LOC'/>LOC<br>
+					<input type="radio" name="scaleRadios" value=7 id='DIM'/>DIM<br>
+					<input type="radio" name="scaleRadios" value=8 id='WHOLE_HALF'/>WH-H<br>
+					<input type="radio" name="scaleRadios" value=9 id='WHOLE'/>WH<br>
+					<input type="radio" name="scaleRadios" value=10 id='MINOR_BLUES'/>MIN BL<br>
+					<input type="radio" name="scaleRadios" value=11 id='MINOR_PENT'/>MIN PENT<br>
+					<input type="radio" name="scaleRadios" value=12 id='MAJOR_PENT'/>MAJ PENT<br>
+					<input type="radio" name="scaleRadios" value=13 id='HARMONIC_MIN'/>HARM MIN<br>
+					<input type="radio" name="scaleRadios" value=14 id='MELODIC_MIN'/>MEL MIN<br>
+					<input type="radio" name="scaleRadios" value=15 id='SUPER_LOC'/>SUP-LOC<br>
 					<input type="radio" name="scaleRadios" value=16 id='FOURTHS'/>FOURTHS<br>
 					<input type="radio" name="scaleRadios" value=17 id='THIRDS'/>THIRDS<br>
 				</form>				
@@ -118,7 +119,7 @@
 			rootNoteRadios[i].onclick = function() {		
 				scales.changeRootNote(this.value);
 				scales.allocatePadNotes();				
-				document.getElementById('mytextarea').innerHTML = this.value;	
+				//document.getElementById('mytextarea').innerHTML = this.value;	
 				//alert("clicked " + this.value);
 			};
 		};
@@ -127,7 +128,7 @@
 		for(var i = 0; i < layoutRadios.length; i++) {
 			layoutRadios[i].onclick = function() {				
 				scales.changeLayout(this.value);
-				document.getElementById('mytextarea').innerHTML = this.value;	
+				//document.getElementById('mytextarea').innerHTML = this.value;	
 				//alert("clicked " + this.value);
 			};
 		};
@@ -137,7 +138,7 @@
 				scales.changeScale(this.value);		
         		scales.allocatePadNotes();
 				pads.reRender();
-				document.getElementById('mytextarea').innerHTML = this.value;	
+				//document.getElementById('mytextarea').innerHTML = this.value;	
 				//alert("clicked " + this.value);
 			};
 		};
