@@ -51,9 +51,9 @@
 				<br/>
 				Layout:
 				<form name="layoutForm">
-					<input type="radio" name="layoutRadios" value=1 id='UP_IN_FOURTHS'/>Up In Fourths<br>
-					<input type="radio" name="layoutRadios" value=2 id='UP_IN_THIRDS'/>Up In Thirds<br>
-					<input type="radio" name="layoutRadios" value=3 id='SEQUENTIAL'/>Sequential<br>
+					<input type="radio" name="layoutRadios" value=0 id='UP_IN_FOURTHS'/>Up In Fourths<br>
+					<input type="radio" name="layoutRadios" value=1 id='UP_IN_THIRDS'/>Up In Thirds<br>
+					<input type="radio" name="layoutRadios" value=2 id='SEQUENTIAL'/>Sequential<br>
 				</form>
 				<br/>
 				<br/>Octave:
@@ -75,29 +75,29 @@
 				</div>
 			</td>
             <td width="10%">
-				<textarea id="mytextarea" rows="4">Text to be changed</textarea>
-				<textarea id="mytouchtext" rows="4">Text to be changed</textarea>
-				<textarea id="mynumtouchestext" rows="4">Text to be changed</textarea>
+				<textarea id="mytextarea" rows="1">Text to be changed</textarea>
+				<textarea id="mytouchtext" rows="1">Text to be changed</textarea>
+				<textarea id="mynumtouchestext" rows="1">Text to be changed</textarea>
 				Scale:
 				<form name="scaleForm">
-					<input type="radio" name="scaleRadios" value=1 id='MAJ'/>MAJOR<br>
-					<input type="radio" name="scaleRadios" value=2 id='MIN'/>MINOR<br>
-					<input type="radio" name="scaleRadios" value=3 id='DOR'/>DORIAN<br>
-					<input type="radio" name="scaleRadios" value=4 id='MIX'/>MIXOLYDIAN<br>
-					<input type="radio" name="scaleRadios" value=5 id='LYD'/>LYDIAN<br>
-					<input type="radio" name="scaleRadios" value=6 id='PHR'/>PHRYGIAN<br>
-					<input type="radio" name="scaleRadios" value=7 id='LOC'/>LOCRIAN<br>
-					<input type="radio" name="scaleRadios" value=8 id='DIM'/>DIMINISHED<br>
-					<input type="radio" name="scaleRadios" value=9 id='WHOLE_HALF'/>WHOLE-HALF<br>
-					<input type="radio" name="scaleRadios" value=10 id='WHOLE'/>WHOLE<br>
-					<input type="radio" name="scaleRadios" value=11 id='MINOR_BLUES'/>MINOR BLUES<br>
-					<input type="radio" name="scaleRadios" value=12 id='MINOR_PENT'/>MINOR PENT<br>
-					<input type="radio" name="scaleRadios" value=13 id='MAJOR_PENT'/>MAJOR PENT<br>
-					<input type="radio" name="scaleRadios" value=14 id='HARMONIC_MIN'/>HARMONIC MIN<br>
-					<input type="radio" name="scaleRadios" value=15 id='MELODIC_MIN'/>MELODIC MIN<br>
-					<input type="radio" name="scaleRadios" value=16 id='SUPER_LOC'/>SUPER-LOCRIAN<br>
-					<input type="radio" name="scaleRadios" value=17 id='FOURTHS'/>FOURTHS<br>
-					<input type="radio" name="scaleRadios" value=18 id='THIRDS'/>THIRDS<br>
+					<input type="radio" name="scaleRadios" value=0 id='MAJ'/>MAJOR<br>
+					<input type="radio" name="scaleRadios" value=1 id='MIN'/>MINOR<br>
+					<input type="radio" name="scaleRadios" value=2 id='DOR'/>DORIAN<br>
+					<input type="radio" name="scaleRadios" value=3 id='MIX'/>MIXOLYDIAN<br>
+					<input type="radio" name="scaleRadios" value=4 id='LYD'/>LYDIAN<br>
+					<input type="radio" name="scaleRadios" value=5 id='PHR'/>PHRYGIAN<br>
+					<input type="radio" name="scaleRadios" value=6 id='LOC'/>LOCRIAN<br>
+					<input type="radio" name="scaleRadios" value=7 id='DIM'/>DIMINISHED<br>
+					<input type="radio" name="scaleRadios" value=8 id='WHOLE_HALF'/>WHOLE-HALF<br>
+					<input type="radio" name="scaleRadios" value=9 id='WHOLE'/>WHOLE<br>
+					<input type="radio" name="scaleRadios" value=10 id='MINOR_BLUES'/>MINOR BLUES<br>
+					<input type="radio" name="scaleRadios" value=11 id='MINOR_PENT'/>MINOR PENT<br>
+					<input type="radio" name="scaleRadios" value=12 id='MAJOR_PENT'/>MAJOR PENT<br>
+					<input type="radio" name="scaleRadios" value=13 id='HARMONIC_MIN'/>HARMONIC MIN<br>
+					<input type="radio" name="scaleRadios" value=14 id='MELODIC_MIN'/>MELODIC MIN<br>
+					<input type="radio" name="scaleRadios" value=15 id='SUPER_LOC'/>SUPER-LOCRIAN<br>
+					<input type="radio" name="scaleRadios" value=16 id='FOURTHS'/>FOURTHS<br>
+					<input type="radio" name="scaleRadios" value=17 id='THIRDS'/>THIRDS<br>
 				</form>				
 			</td>
         </tr>
@@ -108,17 +108,17 @@
 		var canvas=document.getElementById("myCanvas");
 		var ctx=canvas.getContext("2d"); 		
 		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-		var rad = document.rootNoteForm.rootNoteRadios;
+		var rootNoteRadios = document.rootNoteForm.rootNoteRadios;
 		var MAX_TOUCHES = 4;
-		//var touches = {};
+		var touches = [];
 		var oscillators = [];
 		var gainNodes = [];
 
-		for(var i = 0; i < rad.length; i++) {
-			rad[i].onclick = function() {		
+		for(var i = 0; i < rootNoteRadios.length; i++) {
+			rootNoteRadios[i].onclick = function() {		
 				scales.changeRootNote(this.value);
 				scales.allocatePadNotes();				
-				//document.getElementById('mytextarea').innerHTML = this.value;	
+				document.getElementById('mytextarea').innerHTML = this.value;	
 				//alert("clicked " + this.value);
 			};
 		};
@@ -127,15 +127,17 @@
 		for(var i = 0; i < layoutRadios.length; i++) {
 			layoutRadios[i].onclick = function() {				
 				scales.changeLayout(this.value);
-				//document.getElementById('mytextarea').innerHTML = this.value;	
+				document.getElementById('mytextarea').innerHTML = this.value;	
 				//alert("clicked " + this.value);
 			};
 		};
 		var scaleRadios = document.scaleForm.scaleRadios;		
 		for(var i = 0; i < scaleRadios.length; i++) {
 			scaleRadios[i].onclick = function() {				
-				scales.changeScale(this.value);
-				//document.getElementById('mytextarea').innerHTML = this.value;	
+				scales.changeScale(this.value);		
+        		scales.allocatePadNotes();
+				pads.reRender();
+				document.getElementById('mytextarea').innerHTML = this.value;	
 				//alert("clicked " + this.value);
 			};
 		};
@@ -149,18 +151,18 @@
 				osc = audioCtx.createOscillator();
 				gainNode = audioCtx.createGain();	
 				gainNode.connect(audioCtx.destination);
-				gainNode.gain.value = 0.1;
+				gainNode.gain.value = -0.6;
 				osc.type = 'sine';
 				osc.start();
 				oscillators[i]=osc;
 				gainNodes[i]=gainNode;				
 			}
-			preventLongPressMenu(document.getElementById('myCanvas'));			
-			scales.rootNote = 4;
-			document.getElementById("octave").innerHTML = scales.defaultOctave;
-			scales.octave = scales.defaultOctave;
+			preventLongPressMenu(document.getElementById('myCanvas'));		
+			document.getElementById("octave").innerHTML = scales.octave;
 			scales.changeRootNote(scales.rootNote);			
-			scales.changeScale(scales.scaleType);			
+			scales.changeScale(scales.scaleType);	
+        	scales.allocatePadNotes();
+			pads.reRender();		
 			//alert(scales.layoutType);
 			layoutRadio = document.getElementById(stringOfEnum(LayoutType,scales.layoutType));
 			layoutRadio.checked = true;
@@ -171,7 +173,7 @@
 			inKeyCheckbox = document.getElementById('inKeyCheckbox');
 			inKeyCheckbox.checked = scales.inKey;
 			//alert ("rootNote: " +scales.rootNote);
-			scales.allocatePadNotes();
+			//scales.allocatePadNotes();
 			//alert ("padNotes: " + scales.notes);			
 			pads.resizePads();			
 			// prevent scrolling
@@ -186,17 +188,18 @@
 				*/
 			}, false);
 			// handle initial touches
-			canvas.addEventListener('touchstart', function(event) {
-				var touchId = event.touches.length - 1;
-				//for (var i = 0; i < event.touches.length; i++) {
-					var pageX = event.touches[touchId].pageX;
-					var pageY = event.touches[touchId].pageY;
-					//var touchId = event.touches[i].identifier;					
-					//touches[touchId] = touchId;
-					event.preventDefault();
-					event.stopPropagation();
-					handleTouchStart(pageX,pageY,touchId);
-				//}
+			canvas.addEventListener('touchstart', function(event) {				
+				for (var i = 0; i < event.touches.length; i++) {
+					var touchId = event.touches[i].identifier;
+					if (!touches[touchId]){
+						var pageX = event.touches[touchId].pageX;
+						var pageY = event.touches[touchId].pageY;									
+						touches[touchId] = true;
+						event.preventDefault();
+						event.stopPropagation();
+						handleTouchStart(pageX,pageY,touchId);
+					}
+				}
 			}, false);
 
 			canvas.addEventListener("touchend",function(event){
@@ -208,28 +211,25 @@
 		var numTouches=0;
 		function handleTouchStart(touchX,touchY,touchId){
 			if (numTouches < MAX_TOUCHES) {
-				document.getElementById('mytouchtext').innerHTML = "touchstart:"+touchId;
+				//document.getElementById('mytouchtext').innerHTML = "touchstart:"+touchId;
 				var padNum = calcPadNum(touchX,touchY);
-				document.getElementById('mytextarea').innerHTML = "oscillators"+oscillators;
+				//document.getElementById('mytextarea').innerHTML = "oscillators"+oscillators;
 				playNote(padNum,oscillators[touchId],gainNodes[touchId]);
 				numTouches++;
-				document.getElementById('mynumtouchestext').innerHTML =  "numTouches:"+numTouches;
+				//document.getElementById('mynumtouchestext').innerHTML =  "numTouches:"+numTouches;
 			}
 		};
 
 		function handleTouchEnd(touchId){
 			if (numTouches > 0){
-				document.getElementById('mytouchtext').innerHTML = "touchend:"+touchId;
+				//document.getElementById('mytouchtext').innerHTML = "touchend:"+touchId;
 				stopNote(oscillators[touchId],gainNodes[touchId]);
-				//delete gainNodes[touchId];
-				//delete oscillators[touchId];
 				numTouches--;
-				document.getElementById('mynumtouchestext').innerHTML = "numTouches:"+numTouches;
-				document.getElementById('mytextarea').innerHTML = "oscillators"+oscillators;
-				//delete touches[touchId];
+				//document.getElementById('mynumtouchestext').innerHTML = "numTouches:"+numTouches;
+				//document.getElementById('mytextarea').innerHTML = "oscillators"+oscillators;
+				touches[touchId]=false;
 			}
 		};
-
 		function playNote(padNum,osc,gainNode){
 			//document.getElementById('mytextarea').innerHTML = "playNote:"+padNum;
 			var pow = (scales.notes[padNum] - 69) / 12.0;
@@ -237,11 +237,8 @@
 			osc.frequency.value = frequency;								
 			osc.connect(gainNode);
 		};
-
 		function stopNote(osc,gainNode){
-			document.getElementById('mytextarea').innerHTML = "stopNote:";
-			//osc.stop();
-			//gainNode.disconnect();
+			//document.getElementById('mytextarea').innerHTML = "stopNote:";
 			osc.disconnect();
 		};
 
@@ -258,6 +255,7 @@
 		};
 		function changeInKey(){
 			scales.inKey = !scales.inKey;
+        	scales.allocatePadNotes();
 			pads.reRender();
 		};
 		function subtract(){
@@ -275,11 +273,6 @@
 				scales.allocatePadNotes();
 				//alert(scales.notes);
 			}
-		};
-		function reset(){
-			scales.octave = scales.defaultOctave;
-			document.getElementById("octave").innerHTML = scales.defaultOctave;
-			scales.allocatePadNotes();
 		};
 		function absorbEvent_(event) {
 			var e = event || window.event;

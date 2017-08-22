@@ -1,28 +1,28 @@
 var ScaleType = {
-	MAJ: 1,
-	MIN: 2,
-	DOR: 3,
-	MIX: 4,
-	LYD: 5,
-	PHR: 6,
-	LOC: 7,
-	DIM: 8,
-	WHOLE_HALF: 9,
-	WHOLE: 10,
-	MINOR_BLUES: 11,
-	MINOR_PENT: 12,
-	MAJOR_PENT: 13,
-	HARMONIC_MIN: 14,
-	MELODIC_MIN: 15,
-	SUPER_LOC: 16,    
-	FOURTHS: 17,
-	THIRDS: 18
+	MAJ: 0,
+	MIN: 1,
+	DOR: 2,
+	MIX: 3,
+	LYD: 4,
+	PHR: 5,
+	LOC: 6,
+	DIM: 7,
+	WHOLE_HALF: 8,
+	WHOLE: 9,
+	MINOR_BLUES: 10,
+	MINOR_PENT: 11,
+	MAJOR_PENT: 12,
+	HARMONIC_MIN: 13,
+	MELODIC_MIN: 14,
+	SUPER_LOC: 15,    
+	FOURTHS: 16,
+	THIRDS: 17
 };
 
 var LayoutType = {
-	UP_IN_FOURTHS: 1,
-	UP_IN_THIRDS: 2,
-	SEQUENTIAL: 3
+	UP_IN_FOURTHS: 0,
+	UP_IN_THIRDS: 1,
+	SEQUENTIAL: 2
 };
 
 var RootNote = {
@@ -42,15 +42,14 @@ var RootNote = {
 
 var scales = {
 	rootNote : RootNote.C,
-	scaleType : ScaleType.MAJ,
+	scaleType : ScaleType.MIN,
 	layoutType : LayoutType.UP_IN_THIRDS,
 	inKey : true,
 	scaleArray : [],
 	notes : [],
 	notePushed : false,
 	endOfRow : false,
-	defaultOctave : 4,
-	octave : 0,
+	octave : 4,
 	allocatePadNotes : function() {
 		//alert("allocatePadNotes()");
 		if  ((scales.scaleType==ScaleType.FOURTHS) || (scales.scaleType==ScaleType.THIRDS)) {
@@ -60,10 +59,13 @@ var scales = {
 		}
 	},
 	allocateGustoPadNotes : function () {
-		var scaleIndex=0;
+		var scaleIndex;
         var notesIndex=0;
 		var note;
-		
+		var nextRowStartScaleIndex;
+		var nextRowStartScaleNote;
+		scaleIndex = 0;
+		notesIndex=0;
 		note = parseInt(scales.rootNote);
 		note += parseInt(12*scales.octave);
 		scales.notes = [];
@@ -110,23 +112,23 @@ var scales = {
 			// now all the processing and necessary stuff has been recorded / used, 
 			// we can update notesIndex if the generated note was part of the layout		
 			notesIndex++;
-		}
-		
-		
-		
-		
+		}		
 	},
-
 	allocateNormalPadNotes : function() {
 		//alert("allocateNormalPadNotes()");
-		var scaleIndex=0;
+		var scaleIndex;
         var notesIndex=0;
 		var note;
+		var nextRowStartScaleIndex;
+		var nextRowStartScaleNote;
+		scaleIndex = 0;
+		notesIndex=0;
 
 		note=parseInt(scales.rootNote);
-		note+= parseInt(12*scales.octave);
+		note+= parseInt(12*scales.octave);		
 		scales.notes = [];
-		pads.padPaints = [];		
+		pads.padPaints = [];	
+		scales.endOfRow = false;	
 		
 		// start on root note, scaleIndex is 0, nothing pushed, note 0/64
         while (notesIndex < pads.NUM_PADS) {
@@ -136,13 +138,13 @@ var scales = {
 			} else {
 				scales.notePushed=false;
 			}
-            i = i%12;
+            scaleIndex = scaleIndex%12;
             // only add a note if the scale and layout specify it
-            if (scales.scaleArray[i]) {
+            if (scales.scaleArray[scaleIndex]) {
 				scales.notes.push(note);
 				scales.notePushed = true;
-				//alert(scales.notePushed);
-				if(i==0){
+				//alert(note);
+				if(scaleIndex==0){
 					// it's the root note, add appropriate paint
 					pads.padPaints.push(pads.rootPaint);
 					//alert("rootPaint");
@@ -168,13 +170,13 @@ var scales = {
 					if (scales.inKey){					
 						// inKey, use note from 4th pad
 						if (notesIndex%pads.NUM_COLS==3){	
-							nextRowStartScaleIndex = i;
+							nextRowStartScaleIndex = scaleIndex;
 							nextRowStartScaleNote = note;
 						}
 					} else {
 						// 6th pad-note of previous row
 						if (notesIndex%pads.NUM_COLS==5){								
-							nextRowStartScaleIndex = i;
+							nextRowStartScaleIndex = scaleIndex;
 							nextRowStartScaleNote = note;
 						}
 					}					
@@ -185,13 +187,13 @@ var scales = {
 					if (scales.inKey){
 						// inKey, use note from 3rd pad
 						if (notesIndex%pads.NUM_COLS==2){								
-							nextRowStartScaleIndex = i;
+							nextRowStartScaleIndex = scaleIndex;
 							nextRowStartScaleNote = note;
 						}
 					} else {
 						// 5th pad-note of previous row
 						if (notesIndex%pads.NUM_COLS==4){								
-							nextRowStartScaleIndex = i;
+							nextRowStartScaleIndex = scaleIndex;
 							nextRowStartScaleNote = note;
 						}
 					}					
@@ -202,12 +204,12 @@ var scales = {
 					if (scales.inKey){
 						// inKey, use note from 1st pad plus an octave
 						if (notesIndex%pads.NUM_COLS==0){								
-							nextRowStartScaleIndex = i;
+							nextRowStartScaleIndex = scaleIndex;
 							nextRowStartScaleNote = note+12;
 						}
 					} else {
 						// next in sequence						
-						nextRowStartScaleIndex = i+1;
+						nextRowStartScaleIndex = scaleIndex+1;
 						nextRowStartScaleNote = note+1;
 					}
 				}							
@@ -218,7 +220,7 @@ var scales = {
 					// you just filled last pad (usually 7) of the row				
 					// use the nextRowStartScaleNote and nextRowStartScaleIndex	to 
 					// set values for start of next row
-					i = nextRowStartScaleIndex;
+					scaleIndex = nextRowStartScaleIndex;
 					note = nextRowStartScaleNote;
 					scales.endOfRow	= true;
 				} else {
@@ -229,7 +231,7 @@ var scales = {
 			if (!scales.endOfRow){
 				// cycle to the next semitone in scaleArray and increment the midi note				
 				note++;
-				i++;				
+				scaleIndex++;				
 			}
 
 			// now all the processing and necessary stuff has been recorded / used, 
@@ -238,8 +240,7 @@ var scales = {
 				notesIndex++;				
 			}
 		}
-	},
-		
+	},		
 	changeRootNote : function(newRootNote) {
 		//alert("scales.changeRootNote()");
 		// TODO input checking
@@ -250,12 +251,14 @@ var scales = {
 		//alert("changeLayout("+newLayout+")");
 		// TODO input checking
 		scales.layoutType = newLayout;
+        scales.allocatePadNotes();
 		pads.reRender();
 		//alert("rootNote="+scales.rootNote);
 	},
 	changeScale : function(newScale) {
 		//alert("changeScale("+newScale+")");
-		scales.scaleType = newScale;
+		scales.scaleType = parseInt(newScale);
+		//alert(scales.scaleType);
 		switch (scales.scaleType) {
 			case ScaleType.MAJ:
 				//alert("MAJ");
@@ -318,6 +321,6 @@ var scales = {
 				scales.scaleArray = [true, false, true, false, true, true, false, true, false, true, false, true];	
 				break;
 		}
-		pads.reRender();
+				alert (scales.scaleArray);		
 	},	
 };

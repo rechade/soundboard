@@ -16,8 +16,6 @@ var pads = {
     padsRect : null,
     reRender : function() {
         //alert("reRender()");
-        scales.allocatePadNotes();
-        //alert("reRender()");
         pads.drawPads(ctx);
 		inKeyCheckbox = document.getElementById('inKeyCheckbox');
 		inKeyCheckbox.checked = scales.inKey;  
@@ -46,7 +44,6 @@ var pads = {
         ctx.rect(x,y,width,height);
 		ctx.stroke();
     },
-
     drawPads : function (ctx) {
         //alert("drawPads()");
         var x = 0;
