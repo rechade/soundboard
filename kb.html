@@ -146,8 +146,9 @@
 				osc = audioCtx.createOscillator();
 				gainNode = audioCtx.createGain();	
 				gainNode.connect(audioCtx.destination);
-				gainNode.gain.value = -0.6;
+				gainNode.gain.value = 0.0;
 				osc.type = 'sine';
+				osc.connect(gainNode);
 				osc.start();
 				oscillators[i]=osc;
 				gainNodes[i]=gainNode;
@@ -245,13 +246,28 @@
 			}
 		};
 		function playNote(padNum,osc,gainNode){			
+			var now = audioCtx.currentTime;
+			gainNode.gain.cancelScheduledValues( now );
+			
+			// Anchor beginning of ramp at current value.
+			gainNode.gain.setValueAtTime(gainNode.gain.value, now);
 			var pow = (scales.notes[padNum] - 69) / 12.0;
 			var frequency = 440 * Math.pow(2, pow);
 			osc.frequency.value = frequency;								
-			osc.connect(gainNode);
+			//osc.connect(gainNode);
+			 // Ramp quickly up.
+			gainNode.gain.linearRampToValueAtTime(1.0, now + 0.1);
+			// Then decay down to a sustain level.
+			gainNode.gain.exponentialRampToValueAtTime(0.2, now + 0.3);
 		};
-		function stopNote(osc,gainNode){			
-			osc.disconnect();
+		function stopNote(osc,gainNode){
+			var now = audioCtx.currentTime;	
+			gainNode.gain.cancelScheduledValues( now );
+			// Anchor beginning of ramp at current value.
+			gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+			// Ramp down.
+        	gainNode.gain.linearRampToValueAtTime(0.0, now + 0.5);		
+			//osc.disconnect();
 		};
 		function calcPadNum(x,y){
 			x = x - pads.padsX;
