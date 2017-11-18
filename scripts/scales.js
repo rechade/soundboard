@@ -16,7 +16,9 @@ var ScaleType = {
 	MELODIC_MIN: 14,
 	SUPER_LOC: 15,    
 	FOURTHS: 16,
-	THIRDS: 17
+	THIRDS: 17,
+	D_HARM: 18,
+	RAND: 19
 };
 
 var LayoutType = {
@@ -317,6 +319,12 @@ var scales = {
 				scales.scaleArray = [true,false,false,true,false,false,true,false,false,true,false,false];
 				scales.inKey = false;
                 break;	
+			case ScaleType.D_HARM:
+				scales.scaleArray = [true, true, false, false, true, true, false, true, true, false, false, true];
+				break;
+			case ScaleType.RAND:
+				scales.scaleArray = [true, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5];				
+				break;
 			default: 
 				scales.scaleArray = [true, false, true, false, true, true, false, true, false, true, false, true];	
 				break;

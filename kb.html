@@ -68,13 +68,13 @@
 					<input type="checkbox" id="inKeyCheckbox" onclick="changeInKey()">
 				</div>
 			</td>
-            <td width="100%" ><div id='padsCell' style="height:100%">
+            <td width="90%" ><div id='padsCell' style="height:100%">
 				<canvas id="myCanvas" onmousedown="handleTouchStart(event.clientX,event.clientY,event.button)" onmouseup="handleTouchEnd(event.button)" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
 				</div>
 			</td>
-            <td>				
+            <td width="10%">				
 				<!--textarea id="mytextarea" rows="1"></textarea>
 				<textarea id="mytouchtext" rows="1"></textarea>
 				<textarea id="mynumtouchestext" rows="1"></textarea-->				
@@ -96,8 +96,11 @@
 					<input type="radio" name="scaleRadios" value=13 id='HARMONIC_MIN'/>HARM MIN<br>
 					<input type="radio" name="scaleRadios" value=14 id='MELODIC_MIN'/>MEL MIN<br>
 					<input type="radio" name="scaleRadios" value=15 id='SUPER_LOC'/>SUP-LOC<br>
-					<input type="radio" name="scaleRadios" value=16 id='FOURTHS'/>FOURTHS<br>
-					<input type="radio" name="scaleRadios" value=17 id='THIRDS'/>THIRDS<br>
+					<input type="radio" name="scaleRadios" value=16 id='FOURTHS'/>>4S<br>
+					<input type="radio" name="scaleRadios" value=17 id='THIRDS'/>>3S<br>
+					<input type="radio" name="scaleRadios" value=18 id='D_HARM'/>D_HARM<br>
+					<input type="radio" name="scaleRadios" value=19 id='RAND'/>RAND<br>
+
 				</form>				
 			</td>
         </tr>
@@ -255,7 +258,7 @@
 			var frequency = 440 * Math.pow(2, pow);
 			osc.frequency.value = frequency;								
 			//osc.connect(gainNode);
-			 // Ramp quickly up.
+			// Ramp quickly up.
 			gainNode.gain.linearRampToValueAtTime(1.0, now + 0.1);
 			// Then decay down to a sustain level.
 			gainNode.gain.exponentialRampToValueAtTime(0.2, now + 0.3);
