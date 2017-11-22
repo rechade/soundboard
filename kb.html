@@ -104,12 +104,12 @@
 				</form>				
 			</td>
         </tr>
-    </table>	
-	<script src="scripts/pads.js"></script>  
+    </table>
+	<script src="scripts/pads.js"></script>
 	<script src="scripts/scales.js"></script>
 	<script>
 		var canvas=document.getElementById("myCanvas");
-		var ctx=canvas.getContext("2d"); 		
+		var ctx=canvas.getContext("2d");
 		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 		var rootNoteRadios = document.rootNoteForm.rootNoteRadios;
 		var MAX_TOUCHES = 5;
@@ -117,7 +117,42 @@
 		var oscillators = [];
 		var gainNodes = [];
 		var touchedPads = [];
+		
+		var midiAccess=null;  // the MIDIAccess object.
+		
+		if (navigator.requestMIDIAccess)
+			navigator.requestMIDIAccess().then( onMIDIInit, onMIDIReject );
+		  else
+			alert("No MIDI support present in your browser. You're gonna have a bad time.");
 
+		function onMIDIInit(midi) {			
+			var outputs = midi.outputs;
+			if (outputs.size > 0) {
+				outputs.forEach(
+					function(port, key) {
+						//alert(port.name +' '+ port.id);
+						//self.registerPort(port);
+						//self.renderPort(port);						
+					}
+				);				
+				midiAccess = midi;				
+			} else {
+				$("#midioutputs").append("<p>No connected outputs</p>");
+			}
+		};		
+		
+		function sendNote( midiAccess, portID, note ) {			
+			var noteOnMessage = [0x90, note, 0x7f];    // note on, the note, full velocity
+			var output = midiAccess.outputs.get(portID);			
+			output.send( noteOnMessage );  //omitting the timestamp means send immediately.
+			output.send( [0x80, note, 0x40], window.performance.now() + 1000.0 ); // Inlined array creation- note off, the note  
+																			  // release velocity = 64, timestamp = now + 1000ms.
+		}	
+		
+		function onMIDIReject(err) {
+		  alert("The MIDI system failed to start.  You're gonna have a bad time.");
+		}	
+		
 		for(var i = 0; i < rootNoteRadios.length; i++) {
 			rootNoteRadios[i].onclick = function() {		
 				scales.changeRootNote(this.value);
@@ -125,19 +160,19 @@
 			};
 		};
 
-		var layoutRadios = document.layoutForm.layoutRadios;				
+		var layoutRadios = document.layoutForm.layoutRadios;
 		for(var i = 0; i < layoutRadios.length; i++) {
-			layoutRadios[i].onclick = function() {				
-				scales.changeLayout(this.value);				
+			layoutRadios[i].onclick = function() {
+				scales.changeLayout(this.value);
 			};
 		};
 
-		var scaleRadios = document.scaleForm.scaleRadios;		
+		var scaleRadios = document.scaleForm.scaleRadios;
 		for(var i = 0; i < scaleRadios.length; i++) {
-			scaleRadios[i].onclick = function() {				
-				scales.changeScale(this.value);		
+			scaleRadios[i].onclick = function() {
+				scales.changeScale(this.value);
         		scales.allocatePadNotes();
-				pads.reRender();				
+				pads.reRender();
 			};
 		};
 		myInit();
@@ -250,11 +285,13 @@
 		};
 		function playNote(padNum,osc,gainNode){			
 			var now = audioCtx.currentTime;
+			var note;
 			gainNode.gain.cancelScheduledValues( now );
 			
 			// Anchor beginning of ramp at current value.
 			gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-			var pow = (scales.notes[padNum] - 69) / 12.0;
+			note = scales.notes[padNum];
+			var pow = (note - 69) / 12.0;
 			var frequency = 440 * Math.pow(2, pow);
 			osc.frequency.value = frequency;								
 			//osc.connect(gainNode);
@@ -262,6 +299,8 @@
 			gainNode.gain.linearRampToValueAtTime(1.0, now + 0.1);
 			// Then decay down to a sustain level.
 			gainNode.gain.exponentialRampToValueAtTime(0.2, now + 0.3);
+			
+						sendNote(midiAccess,"output-3",note);	
 		};
 		function stopNote(osc,gainNode){
 			var now = audioCtx.currentTime;	
