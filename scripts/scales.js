@@ -324,6 +324,9 @@ var scales = {
 				break;
 			case ScaleType.RAND:
 				scales.scaleArray = [true, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5];				
+				alert (scales.scaleArray);
+				uriContent = "data:application/octet-stream," + encodeURIComponent(scales.scaleArray);
+				newWindow = window.open(uriContent, 'neuesDokument');
 				break;
 			default: 
 				scales.scaleArray = [true, false, true, false, true, true, false, true, false, true, false, true];	

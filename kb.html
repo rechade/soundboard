@@ -75,9 +75,10 @@
 				</div>
 			</td>
             <td width="10%">				
-				<!--textarea id="mytextarea" rows="1"></textarea>
+				<textarea id="mytextarea" rows="1"></textarea>
 				<textarea id="mytouchtext" rows="1"></textarea>
-				<textarea id="mynumtouchestext" rows="1"></textarea-->				
+				<textarea id="mynumtouchestext" rows="1"></textarea>
+				<textarea id="mytouchid" rows="1"></textarea>
 				Scale:
 				<form name="scaleForm">
 					<input type="radio" name="scaleRadios" value=0 id='MAJ'/>MAJ<br>
@@ -116,42 +117,8 @@
 		var touches = [];
 		var oscillators = [];
 		var gainNodes = [];
-		var touchedPads = [];
-		
-		var midiAccess=null;  // the MIDIAccess object.
-		
-		if (navigator.requestMIDIAccess)
-			navigator.requestMIDIAccess().then( onMIDIInit, onMIDIReject );
-		  else
-			alert("No MIDI support present in your browser. You're gonna have a bad time.");
-
-		function onMIDIInit(midi) {			
-			var outputs = midi.outputs;
-			if (outputs.size > 0) {
-				outputs.forEach(
-					function(port, key) {
-						//alert(port.name +' '+ port.id);
-						//self.registerPort(port);
-						//self.renderPort(port);						
-					}
-				);				
-				midiAccess = midi;				
-			} else {
-				$("#midioutputs").append("<p>No connected outputs</p>");
-			}
-		};		
-		
-		function sendNote( midiAccess, portID, note ) {			
-			var noteOnMessage = [0x90, note, 0x7f];    // note on, the note, full velocity
-			var output = midiAccess.outputs.get(portID);			
-			output.send( noteOnMessage );  //omitting the timestamp means send immediately.
-			output.send( [0x80, note, 0x40], window.performance.now() + 1000.0 ); // Inlined array creation- note off, the note  
-																			  // release velocity = 64, timestamp = now + 1000ms.
-		}	
-		
-		function onMIDIReject(err) {
-		  alert("The MIDI system failed to start.  You're gonna have a bad time.");
-		}	
+		var touchedPads = [];		
+		var numTouches=0;
 		
 		for(var i = 0; i < rootNoteRadios.length; i++) {
 			rootNoteRadios[i].onclick = function() {		
@@ -177,6 +144,35 @@
 		};
 		myInit();
 
+		var midiAccess=null;  // the MIDIAccess object.
+		var midiOutputPort;
+		if (navigator.requestMIDIAccess)
+			navigator.requestMIDIAccess().then( onMIDIInit, onMIDIReject );
+		  else
+			alert("No MIDI support present in your browser. You're gonna have a bad time.");
+
+		function onMIDIInit(midi) {			
+			var outputs = midi.outputs;
+			var outputPortId;
+			if (outputs.size > 0) {
+				outputs.forEach(
+					function(port, key) {
+						// alert(port.name +' '+ port.id);
+						if (port.name=="metronome"){
+							outputPortId = port.id;
+						}						
+					}
+				);								
+				midiOutputPort = midi.outputs.get(outputPortId);
+			} else {
+				$("#midioutputs").append("<p>No connected outputs</p>");
+			}
+		};				
+		
+		function onMIDIReject(err) {
+		  alert("The MIDI system failed to start.  You're gonna have a bad time.");
+		}	
+		
 		function myInit() {			
 			var osc=null;
 			var gainNode=null;
@@ -191,7 +187,13 @@
 				oscillators[i]=osc;
 				gainNodes[i]=gainNode;
 				touchedPads[i]=-99;
+				touches[i]=false;
 			}			
+			
+			document.getElementById("mytextarea").innerHTML = touchedPads;	
+			document.getElementById("mytouchtext").innerHTML = touches;
+			document.getElementById("mynumtouchestext").innerHTML = numTouches;
+			
 			preventLongPressMenu(document.getElementById('myCanvas'));		
 			document.getElementById("octave").innerHTML = scales.octave;
 			scales.changeRootNote(scales.rootNote);			
@@ -206,84 +208,93 @@
 			scalesRadio.checked = true;
 			inKeyCheckbox = document.getElementById('inKeyCheckbox');
 			inKeyCheckbox.checked = scales.inKey;			
-			pads.resizePads();			
-			// prevent scrolling
-			document.body.addEventListener('touchmove', function(event) {			
-				event.preventDefault();
-				event.stopPropagation();
-				event.preventDefault();
-				/*
-				setTimeout(
-					function(){
-						osc.stop();
-					}, 500
-				);
-				*/
+			pads.resizePads();						
+			// Prevent scrolling when touching the canvas
+			document.body.addEventListener("touchstart", function (e) {
+			  if (e.target == canvas) {
+				e.preventDefault();
+			  }
+			}, false);
+			document.body.addEventListener("touchend", function (e) {
+			  if (e.target == canvas) {
+				e.preventDefault();
+			  }
+			}, false);
+			document.body.addEventListener("touchmove", function (e) {
+			  if (e.target == canvas) {
+				e.preventDefault();
+			  }
+			}, false);
+			
+			// handle initial touches			
+			canvas.addEventListener('touchstart', function(event) {	
+				for (var i = 0; i < event.touches.length; i++) {
+					var touchId = event.touches[i].identifier;
+					var pageX = event.touches[touchId].pageX;
+					var pageY = event.touches[touchId].pageY;	
+					handleTouchStart(pageX,pageY,touchId);					
+				}				
 			}, false);
 			canvas.addEventListener('touchmove', function(event) {
 				for (var i = 0; i < event.changedTouches.length; i++) {
 					var touchId = event.touches[i].identifier;
-					var x = event.changedTouches[touchId].pageX;
-					var y = event.changedTouches[touchId].pageY;									
-					var padNum = calcPadNum(x,y);
-					if (touchedPads[touchId]!=padNum){
-						playNote(padNum, oscillators[touchId],gainNodes[touchId]);
-					}					
-					event.preventDefault();
-					event.stopPropagation();
-					touchedPads[touchId]=padNum;					
+					var pageX = event.changedTouches[touchId].pageX;
+					var pageY = event.changedTouches[touchId].pageY;	
+					handleTouchMove(pageX,pageY,touchId);
 				} 
-				//event.preventDefault();
-				/*
-				setTimeout(
-					function(){
-						osc.stop();
-					}, 500
-				);
-				*/
 			}, false);
-			// handle initial touches
-			canvas.addEventListener('touchstart', function(event) {				
-				for (var i = 0; i < event.touches.length; i++) {
-					var touchId = event.touches[i].identifier;
-					if (!touches[touchId]){
-						var pageX = event.touches[touchId].pageX;
-						var pageY = event.touches[touchId].pageY;									
-						touches[touchId] = true;
-						event.preventDefault();
-						event.stopPropagation();
-						touchedPads[touchId]=handleTouchStart(pageX,pageY,touchId);						
-					}
-				}
-				//document.getElementById("mytextarea").innerHTML = touchedPads;
-			}, false);
-
 			canvas.addEventListener("touchend",function(event){
 				for(var i = 0; i<event.changedTouches.length; i++){										
-					handleTouchEnd(event.changedTouches[i].identifier);					
+					handleTouchEnd(event.changedTouches[i].identifier);
 				}
 			}, false);
 		};
-		var numTouches=0;
-		function handleTouchStart(touchX,touchY,touchId){
-			var padNum;
-			if (numTouches < MAX_TOUCHES) {				
-				padNum = calcPadNum(touchX,touchY);				
-				playNote(padNum,oscillators[touchId],gainNodes[touchId]);
-				numTouches++;				
-			}
-			return padNum;
+		
+		function handleTouchStart(touchX,touchY,touchId){			
+			if (!touches[touchId]){
+				var padNum;
+				if (numTouches < MAX_TOUCHES) {						
+					touches[touchId] = true;			
+					padNum = calcPadNum(touchX,touchY);				
+					touchedPads[touchId]=padNum;
+					playNote(padNum,oscillators[touchId],gainNodes[touchId]);								
+					numTouches++;			
+				};
+			};
+			document.getElementById("mytextarea").innerHTML = touchedPads;	
+			document.getElementById("mytouchtext").innerHTML = touches;
+			document.getElementById("mynumtouchestext").innerHTML = numTouches;					
+			document.getElementById("mytouchid").innerHTML = touchId;
 		};
-		function handleTouchEnd(touchId){
-			if (numTouches > 0){				
+		function handleTouchMove(touchX,touchY,touchId){					
+			var padNum = calcPadNum(touchX,touchY);
+			if (touchedPads[touchId]!=padNum){
+				playNote(padNum, oscillators[touchId],gainNodes[touchId]);
+				touchedPads[touchId]=padNum;
+			}				
+			document.getElementById("mytextarea").innerHTML = touchedPads;	
+			document.getElementById("mytouchtext").innerHTML = touches;
+			document.getElementById("mynumtouchestext").innerHTML = numTouches;							
+			document.getElementById("mytouchid").innerHTML = touchId;
+		};		
+		function handleTouchEnd(touchId){		
+			//alert(touchId);
+			if (numTouches > 0){	
+				pad = touchedPads[touchId];				
+				note = scales.notes[pad];		
+				stopMidiNote(note);
 				stopNote(oscillators[touchId],gainNodes[touchId]);
 				numTouches--;
 				touches[touchId]=false;
-				touchedPads[touchId]=-99;
-				//document.getElementById("mytextarea").innerHTML = touchedPads;
-			}
+				touchedPads[touchId]=-99;			
+			}			
+			document.getElementById("mytextarea").innerHTML = touchedPads;	
+			document.getElementById("mytouchtext").innerHTML = touches;
+			document.getElementById("mynumtouchestext").innerHTML = numTouches;						
+			document.getElementById("mytouchid").innerHTML = touchId;		
 		};
-		function playNote(padNum,osc,gainNode){			
+		
+		function playNote(padNum,osc,gainNode){
 			var now = audioCtx.currentTime;
 			var note;
 			gainNode.gain.cancelScheduledValues( now );
@@ -293,24 +304,33 @@
 			note = scales.notes[padNum];
 			var pow = (note - 69) / 12.0;
 			var frequency = 440 * Math.pow(2, pow);
-			osc.frequency.value = frequency;								
-			//osc.connect(gainNode);
+			osc.frequency.value = frequency;
 			// Ramp quickly up.
 			gainNode.gain.linearRampToValueAtTime(1.0, now + 0.1);
 			// Then decay down to a sustain level.
-			gainNode.gain.exponentialRampToValueAtTime(0.2, now + 0.3);
-			
-						sendNote(midiAccess,"output-3",note);	
+			gainNode.gain.exponentialRampToValueAtTime(0.2, now + 0.3);						
+			playMidiNote(note);	
 		};
+		
 		function stopNote(osc,gainNode){
 			var now = audioCtx.currentTime;	
 			gainNode.gain.cancelScheduledValues( now );
 			// Anchor beginning of ramp at current value.
 			gainNode.gain.setValueAtTime(gainNode.gain.value, now);
 			// Ramp down.
-        	gainNode.gain.linearRampToValueAtTime(0.0, now + 0.5);		
-			//osc.disconnect();
+        	gainNode.gain.linearRampToValueAtTime(0.0, now + 0.5);	
 		};
+		
+		function playMidiNote( note ) {			
+			var noteOnMessage = [0x90, note, 0x7f];  // note on, the note, full velocity			
+			midiOutputPort.send( noteOnMessage );  // omitting the timestamp means send immediately.			
+		};
+		
+		function stopMidiNote( note ) {			
+			var noteOffMessage = [0x80, note, 0x7f];    // note off, the note, velocity			
+			midiOutputPort.send( noteOffMessage );
+		};
+		
 		function calcPadNum(x,y){
 			x = x - pads.padsX;
 			y = y - pads.padsY;
