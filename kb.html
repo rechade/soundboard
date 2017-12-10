@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>MC Ricky G KB</title>
   <meta name="description" content="MC Ricky G KB">
-  <meta name="MC Ricky G" content="KB">
-  <link rel="stylesheet" href="css/styles.css?v=1.0">
+  <meta name="MC Ricky G" content="KB">  
 <style type="text/css">
 	* {padding:0; margin:0;}
   	html {
@@ -31,8 +30,7 @@
 <body onresize="pads.resizePads()">	
 	<table border = "1">
          <tr>
-            <td>
-				Root Note:
+            <td width="10%">
 				<form name="rootNoteForm">
 					<input type="radio" name="rootNoteRadios" value=0 id='0'/>C<br>
 					<input type="radio" name="rootNoteRadios" value=1 id='1'/>C#<br>
@@ -47,35 +45,31 @@
 					<input type="radio" name="rootNoteRadios" value=10 id='10'/>A#<br>
 					<input type="radio" name="rootNoteRadios" value=11 id='11'/>B<br>
 				</form>
-				<br/>
-				<br/>
 				Layout:
 				<form name="layoutForm">
 					<input type="radio" name="layoutRadios" value=0 id='UP_IN_FOURTHS'/>^4s<br>
 					<input type="radio" name="layoutRadios" value=1 id='UP_IN_THIRDS'/>^3s<br>
 					<input type="radio" name="layoutRadios" value=2 id='SEQUENTIAL'/>Seq<br>
 				</form>
-				<br/>
-				<br/>Octave:
+				Octave:
 				<div class="button_group">
 					<button onclick="add()" id="add">+ 1</button>
 					<div id="octave">0</div>					
 					<button onclick="subtract()" id="subtract">- 1</button>
 				</div>
-				<br/>
-				<br/>In Key:
+				In Key:
 				<div class="button_group">
 					<input type="checkbox" id="inKeyCheckbox" onclick="changeInKey()">
 				</div>
 			</td>
-            <td width="90%" ><div id='padsCell' style="height:100%">
+            <td width="80%"><div id='padsCell' style="height:100%">
 				<canvas id="myCanvas" onmousedown="handleTouchStart(event.clientX,event.clientY,event.button)" onmouseup="handleTouchEnd(event.button)" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
 				</div>
 			</td>
             <td width="10%">				
-				<textarea id="mytextarea" rows="1"></textarea>
+				<textarea id="mytextarea" rows="10"></textarea>
 				<textarea id="mytouchtext" rows="1"></textarea>
 				<textarea id="mynumtouchestext" rows="1"></textarea>
 				<textarea id="mytouchid" rows="1"></textarea>
@@ -91,15 +85,15 @@
 					<input type="radio" name="scaleRadios" value=7 id='DIM'/>DIM<br>
 					<input type="radio" name="scaleRadios" value=8 id='WHOLE_HALF'/>WH-H<br>
 					<input type="radio" name="scaleRadios" value=9 id='WHOLE'/>WH<br>
-					<input type="radio" name="scaleRadios" value=10 id='MINOR_BLUES'/>MIN BL<br>
-					<input type="radio" name="scaleRadios" value=11 id='MINOR_PENT'/>MIN PENT<br>
-					<input type="radio" name="scaleRadios" value=12 id='MAJOR_PENT'/>MAJ PENT<br>
-					<input type="radio" name="scaleRadios" value=13 id='HARMONIC_MIN'/>HARM MIN<br>
-					<input type="radio" name="scaleRadios" value=14 id='MELODIC_MIN'/>MEL MIN<br>
+					<input type="radio" name="scaleRadios" value=10 id='MINOR_BLUES'/>MIN-BL<br>
+					<input type="radio" name="scaleRadios" value=11 id='MINOR_PENT'/>MIN-PENT<br>
+					<input type="radio" name="scaleRadios" value=12 id='MAJOR_PENT'/>MAJ-PENT<br>
+					<input type="radio" name="scaleRadios" value=13 id='HARMONIC_MIN'/>HAR-MIN<br>
+					<input type="radio" name="scaleRadios" value=14 id='MELODIC_MIN'/>MEL-MIN<br>
 					<input type="radio" name="scaleRadios" value=15 id='SUPER_LOC'/>SUP-LOC<br>
 					<input type="radio" name="scaleRadios" value=16 id='FOURTHS'/>>4S<br>
 					<input type="radio" name="scaleRadios" value=17 id='THIRDS'/>>3S<br>
-					<input type="radio" name="scaleRadios" value=18 id='D_HARM'/>D_HARM<br>
+					<input type="radio" name="scaleRadios" value=18 id='D_HARM'/>D-HARM<br>
 					<input type="radio" name="scaleRadios" value=19 id='RAND'/>RAND<br>
 
 				</form>				
@@ -113,28 +107,32 @@
 		var ctx=canvas.getContext("2d");
 		var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 		var rootNoteRadios = document.rootNoteForm.rootNoteRadios;
-		var MAX_TOUCHES = 5;
-		var touches = [];
+		var MAX_TOUCHES = 10;
+		var midiAccess=null;  // the MIDIAccess object.
+		var midiOutputPort;
+		var layoutRadios = document.layoutForm.layoutRadios;
+		var scaleRadios = document.scaleForm.scaleRadios;		
+		var numTouches=0;
+		var touchMap = new Map();	
+		var oscillatorMap = new Map();		
+		var gainNodeMap = new Map();
+		var frequencies = [];
 		var oscillators = [];
 		var gainNodes = [];
-		var touchedPads = [];		
-		var numTouches=0;
-		
+		var oscillatorAllocations = [];
+		const dummyTouchId = -99;
+
 		for(var i = 0; i < rootNoteRadios.length; i++) {
 			rootNoteRadios[i].onclick = function() {		
 				scales.changeRootNote(this.value);
 				scales.allocatePadNotes();								
 			};
 		};
-
-		var layoutRadios = document.layoutForm.layoutRadios;
 		for(var i = 0; i < layoutRadios.length; i++) {
 			layoutRadios[i].onclick = function() {
 				scales.changeLayout(this.value);
 			};
 		};
-
-		var scaleRadios = document.scaleForm.scaleRadios;
 		for(var i = 0; i < scaleRadios.length; i++) {
 			scaleRadios[i].onclick = function() {
 				scales.changeScale(this.value);
@@ -144,8 +142,6 @@
 		};
 		myInit();
 
-		var midiAccess=null;  // the MIDIAccess object.
-		var midiOutputPort;
 		if (navigator.requestMIDIAccess)
 			navigator.requestMIDIAccess().then( onMIDIInit, onMIDIReject );
 		  else
@@ -174,26 +170,25 @@
 		}	
 		
 		function myInit() {			
-			var osc=null;
-			var gainNode=null;
-			for (var i=0; i<MAX_TOUCHES; i++){
-				osc = audioCtx.createOscillator();
-				gainNode = audioCtx.createGain();	
+			var pow;
+			for(var i=1; i<127; i++) {
+				pow = (i-69) / 12.0;
+				frequencies[i] = 440 * Math.pow(2, pow);
+			}
+			for(var i=0; i<MAX_TOUCHES; i++) {
+				var osc = audioCtx.createOscillator();
+				var gainNode = audioCtx.createGain();	
 				gainNode.connect(audioCtx.destination);
 				gainNode.gain.value = 0.0;
 				osc.type = 'sine';
 				osc.connect(gainNode);
 				osc.start();
-				oscillators[i]=osc;
-				gainNodes[i]=gainNode;
-				touchedPads[i]=-99;
-				touches[i]=false;
-			}			
-			
-			document.getElementById("mytextarea").innerHTML = touchedPads;	
-			document.getElementById("mytouchtext").innerHTML = touches;
-			document.getElementById("mynumtouchestext").innerHTML = numTouches;
-			
+				oscillators[i] = osc;
+				gainNodes[i] = gainNode;
+				oscillatorAllocations[i] = dummyTouchId;
+				// all oscillators are started at 0 gain and unallocated
+			}
+
 			preventLongPressMenu(document.getElementById('myCanvas'));		
 			document.getElementById("octave").innerHTML = scales.octave;
 			scales.changeRootNote(scales.rootNote);			
@@ -208,129 +203,119 @@
 			scalesRadio.checked = true;
 			inKeyCheckbox = document.getElementById('inKeyCheckbox');
 			inKeyCheckbox.checked = scales.inKey;			
-			pads.resizePads();						
-			// Prevent scrolling when touching the canvas
-			document.body.addEventListener("touchstart", function (e) {
-			  if (e.target == canvas) {
-				e.preventDefault();
-			  }
-			}, false);
-			document.body.addEventListener("touchend", function (e) {
-			  if (e.target == canvas) {
-				e.preventDefault();
-			  }
-			}, false);
-			document.body.addEventListener("touchmove", function (e) {
-			  if (e.target == canvas) {
-				e.preventDefault();
-			  }
-			}, false);
+			pads.resizePads();	
 			
 			// handle initial touches			
-			canvas.addEventListener('touchstart', function(event) {	
-				for (var i = 0; i < event.touches.length; i++) {
-					var touchId = event.touches[i].identifier;
-					var pageX = event.touches[touchId].pageX;
-					var pageY = event.touches[touchId].pageY;	
-					handleTouchStart(pageX,pageY,touchId);					
-				}				
-			}, false);
-			canvas.addEventListener('touchmove', function(event) {
+			canvas.addEventListener('touchstart', function(event) {
 				for (var i = 0; i < event.changedTouches.length; i++) {
-					var touchId = event.touches[i].identifier;
-					var pageX = event.changedTouches[touchId].pageX;
-					var pageY = event.changedTouches[touchId].pageY;	
-					handleTouchMove(pageX,pageY,touchId);
-				} 
+					var touchId = event.changedTouches[i].identifier;
+					var pageX = event.changedTouches[i].pageX;
+					var pageY = event.changedTouches[i].pageY;
+					handleTouchStart(pageX,pageY,touchId);
+				}
 			}, false);
 			canvas.addEventListener("touchend",function(event){
-				for(var i = 0; i<event.changedTouches.length; i++){										
-					handleTouchEnd(event.changedTouches[i].identifier);
+				for(var i = 0; i<event.changedTouches.length; i++){					
+					var touchId = event.changedTouches[i].identifier;									
+					handleTouchEnd(touchId);
 				}
 			}, false);
 		};
-		
-		function handleTouchStart(touchX,touchY,touchId){			
-			if (!touches[touchId]){
-				var padNum;
-				if (numTouches < MAX_TOUCHES) {						
-					touches[touchId] = true;			
-					padNum = calcPadNum(touchX,touchY);				
-					touchedPads[touchId]=padNum;
-					playNote(padNum,oscillators[touchId],gainNodes[touchId]);								
-					numTouches++;			
-				};
-			};
-			document.getElementById("mytextarea").innerHTML = touchedPads;	
-			document.getElementById("mytouchtext").innerHTML = touches;
-			document.getElementById("mynumtouchestext").innerHTML = numTouches;					
-			document.getElementById("mytouchid").innerHTML = touchId;
+
+		function handleTouchStart(touchX,touchY,touchId){
+			var padNum;
+			if (numTouches<MAX_TOUCHES){				
+				numTouches++;							
+				padNum = calcPadNum(touchX,touchY);
+				touchMap.set(touchId,padNum);
+				outputDebugInfo(touchId);
+				playNote(padNum,touchId);
+				// hilight pads with this note
+			}
 		};
-		function handleTouchMove(touchX,touchY,touchId){					
-			var padNum = calcPadNum(touchX,touchY);
-			if (touchedPads[touchId]!=padNum){
-				playNote(padNum, oscillators[touchId],gainNodes[touchId]);
-				touchedPads[touchId]=padNum;
-			}				
-			document.getElementById("mytextarea").innerHTML = touchedPads;	
-			document.getElementById("mytouchtext").innerHTML = touches;
-			document.getElementById("mynumtouchestext").innerHTML = numTouches;							
-			document.getElementById("mytouchid").innerHTML = touchId;
+		function handleTouchEnd(touchId){
+			numTouches--;
+			outputDebugInfo(touchId);
+			stopNote(touchId);
+			var pad = touchMap.get(touchId);
+			note = scales.notes[pad];
+			stopMidiNote(note);
+			touchMap.delete(touchId);
 		};		
-		function handleTouchEnd(touchId){		
-			//alert(touchId);
-			if (numTouches > 0){	
-				pad = touchedPads[touchId];				
-				note = scales.notes[pad];		
-				stopMidiNote(note);
-				stopNote(oscillators[touchId],gainNodes[touchId]);
-				numTouches--;
-				touches[touchId]=false;
-				touchedPads[touchId]=-99;			
-			}			
-			document.getElementById("mytextarea").innerHTML = touchedPads;	
-			document.getElementById("mytouchtext").innerHTML = touches;
-			document.getElementById("mynumtouchestext").innerHTML = numTouches;						
-			document.getElementById("mytouchid").innerHTML = touchId;		
-		};
-		
-		function playNote(padNum,osc,gainNode){
+		function playNote(padNum,touchId){
 			var now = audioCtx.currentTime;
 			var note;
-			gainNode.gain.cancelScheduledValues( now );
+			var i;
+			var oscillator;
+			var gainNode;
+
+			// allocate a free oscillator to this touchId
+			i = findFreeOscillator();
 			
+			// mark oscillator as taken by this touchId
+			oscillatorAllocations[i] = touchId;
+			
+			// pull out the audioNodes for this touchId
+			oscillator = oscillators[i];
+			gainNode = gainNodes[i];
+
+			// add the oscillator and gainnode to the pool of playing audioNodes
+			oscillatorMap.set (touchId,oscillator);
+			gainNodeMap.set (touchId,gainNode);
+			
+			gainNode.gain.cancelScheduledValues( now );			
 			// Anchor beginning of ramp at current value.
 			gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-			note = scales.notes[padNum];
-			var pow = (note - 69) / 12.0;
-			var frequency = 440 * Math.pow(2, pow);
-			osc.frequency.value = frequency;
+			note = scales.notes[padNum];			
+			oscillator.frequency.value = frequencies[note];
 			// Ramp quickly up.
 			gainNode.gain.linearRampToValueAtTime(1.0, now + 0.1);
 			// Then decay down to a sustain level.
 			gainNode.gain.exponentialRampToValueAtTime(0.2, now + 0.3);						
 			playMidiNote(note);	
-		};
-		
-		function stopNote(osc,gainNode){
+		};		
+		function deallocateTouchedOscillator(touchId){
+			for(var i=0;i<MAX_TOUCHES;i++){
+				if (oscillatorAllocations[i]==touchId){
+					oscillatorAllocations[i]=dummyTouchId;					
+					oscillatorMap.delete(touchId);
+					gainNodeMap.delete(touchId);
+				}
+			}
+		}
+		function stopNote(touchId){			
 			var now = audioCtx.currentTime;	
-			gainNode.gain.cancelScheduledValues( now );
+			var thisGain = gainNodeMap.get(touchId);
+			thisGain.gain.cancelScheduledValues( now );
 			// Anchor beginning of ramp at current value.
-			gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+			thisGain.gain.setValueAtTime(thisGain.gain.value, now);
 			// Ramp down.
-        	gainNode.gain.linearRampToValueAtTime(0.0, now + 0.5);	
+        	thisGain.gain.linearRampToValueAtTime(0.0, now + 0.5);	
+			deallocateTouchedOscillator(touchId);
+		};			
+		function findFreeOscillator() {
+			for (var i=0; i<MAX_TOUCHES; i++){
+				if (oscillatorAllocations[i]==dummyTouchId){
+					return i;
+				}
+			}
+			return -99;		
+		}
+		function handleMouseDown(touchX,touchY,touchId){
+			//document.getElementById("mytextarea").innerHTML = touchX +","+touchY;
+			handleTouchStart(touchX,touchY,touchId);
 		};
-		
+		function handleMouseUp(touchId){
+			handleTouchEnd(touchId);
+		};	
 		function playMidiNote( note ) {			
 			var noteOnMessage = [0x90, note, 0x7f];  // note on, the note, full velocity			
 			midiOutputPort.send( noteOnMessage );  // omitting the timestamp means send immediately.			
-		};
-		
+		};		
 		function stopMidiNote( note ) {			
 			var noteOffMessage = [0x80, note, 0x7f];    // note off, the note, velocity			
 			midiOutputPort.send( noteOffMessage );
-		};
-		
+		};		
 		function calcPadNum(x,y){
 			x = x - pads.padsX;
 			y = y - pads.padsY;
@@ -374,6 +359,17 @@
 			node.ontouchmove = absorbEvent_;
 			node.ontouchend = absorbEvent_;
 			node.ontouchcancel = absorbEvent_;
+		};		
+		function outputDebugInfo(touchId){			
+			var output = "";
+			var iterator = touchMap.entries();
+			for (var i=0; i<touchMap.size; i++){
+				output = output +"["+ iterator.next().value+"]";
+			}
+			document.getElementById("mytextarea").innerHTML = output;	
+			document.getElementById("mytouchtext").innerHTML = touchMap;
+			document.getElementById("mynumtouchestext").innerHTML = numTouches;							
+			document.getElementById("mytouchid").innerHTML = touchId;
 		};
   </script>
 </body>
