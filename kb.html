@@ -63,7 +63,7 @@
 				</div>
 			</td>
             <td width="80%"><div id='padsCell' style="height:100%">
-				<canvas id="myCanvas" onmousedown="handleTouchStart(event.clientX,event.clientY,event.button)" onmouseup="handleTouchEnd(event.button)" style="border:1px solid #d3d3d3;">
+				<canvas id="myCanvas" onmousedown="handleTouchStart(event.clientX,event.clientY,event.button)" onmouseup="handleTouchEnd(event.button)" onmousemove="handleTouchMove(event.clientX,event.clientY,event.button)" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
 				</div>
@@ -220,8 +220,15 @@
 					handleTouchEnd(touchId);
 				}
 			}, false);
+			canvas.addEventListener("touchmove",function(event){
+				for (var i = 0; i < event.changedTouches.length; i++) {
+					var touchId = event.changedTouches[i].identifier;
+					var pageX = event.changedTouches[i].pageX;
+					var pageY = event.changedTouches[i].pageY;
+					handleTouchMove(pageX,pageY,touchId);
+				}
+			}, false);
 		};
-
 		function handleTouchStart(touchX,touchY,touchId){
 			var padNum;
 			if (numTouches<MAX_TOUCHES){				
@@ -230,6 +237,16 @@
 				touchMap.set(touchId,padNum);
 				outputDebugInfo(touchId);
 				playNote(padNum,touchId);
+				// hilight pads with this note
+			}
+		};
+		function handleTouchMove(touchX,touchY,touchId){
+			var padNum;				
+			padNum = calcPadNum(touchX,touchY);
+			if (padNum!=touchMap.get(touchId)){
+				touchMap.set(touchId,padNum);				
+				outputDebugInfo(touchId);
+				changeNote(padNum,touchId);
 				// hilight pads with this note
 			}
 		};
@@ -242,6 +259,10 @@
 			stopMidiNote(note);
 			touchMap.delete(touchId);
 		};		
+		function changeNote(padNum,touchId){			
+			var note = scales.notes[padNum];
+			oscillatorMap.get(touchId).frequency.value = frequencies[note];
+		}
 		function playNote(padNum,touchId){
 			var now = audioCtx.currentTime;
 			var note;
@@ -283,16 +304,16 @@
 				}
 			}
 		}
-		function stopNote(touchId){			
-			var now = audioCtx.currentTime;	
+		function stopNote(touchId){
+			var now = audioCtx.currentTime;
 			var thisGain = gainNodeMap.get(touchId);
 			thisGain.gain.cancelScheduledValues( now );
 			// Anchor beginning of ramp at current value.
 			thisGain.gain.setValueAtTime(thisGain.gain.value, now);
 			// Ramp down.
-        	thisGain.gain.linearRampToValueAtTime(0.0, now + 0.5);	
+        	thisGain.gain.linearRampToValueAtTime(0.0, now + 0.5);
 			deallocateTouchedOscillator(touchId);
-		};			
+		};
 		function findFreeOscillator() {
 			for (var i=0; i<MAX_TOUCHES; i++){
 				if (oscillatorAllocations[i]==dummyTouchId){
@@ -307,7 +328,7 @@
 		};
 		function handleMouseUp(touchId){
 			handleTouchEnd(touchId);
-		};	
+		};
 		function playMidiNote( note ) {			
 			var noteOnMessage = [0x90, note, 0x7f];  // note on, the note, full velocity			
 			midiOutputPort.send( noteOnMessage );  // omitting the timestamp means send immediately.			
@@ -359,16 +380,16 @@
 			node.ontouchmove = absorbEvent_;
 			node.ontouchend = absorbEvent_;
 			node.ontouchcancel = absorbEvent_;
-		};		
-		function outputDebugInfo(touchId){			
+		};
+		function outputDebugInfo(touchId){
 			var output = "";
 			var iterator = touchMap.entries();
 			for (var i=0; i<touchMap.size; i++){
 				output = output +"["+ iterator.next().value+"]";
 			}
-			document.getElementById("mytextarea").innerHTML = output;	
+			document.getElementById("mytextarea").innerHTML = output;
 			document.getElementById("mytouchtext").innerHTML = touchMap;
-			document.getElementById("mynumtouchestext").innerHTML = numTouches;							
+			document.getElementById("mynumtouchestext").innerHTML = numTouches;
 			document.getElementById("mytouchid").innerHTML = touchId;
 		};
   </script>
